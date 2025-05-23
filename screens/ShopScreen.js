@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Alert,
-    Image,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -50,24 +49,29 @@ export default function ShopScreen({ navigation }) {
         );
     };
 
-    const renderPot = (pot) => {
+    const renderPotItem = (pot, index) => {
         const isOwned = unlockedPots.includes(pot.id);
         const canAfford = coins >= pot.price;
 
         return (
-            <View key={pot.id} style={styles.potCard}>
-                <Image source={pot.image} style={styles.potImage} />
-                <Text style={styles.potName}>{pot.name}</Text>
+            <View key={pot.id} style={styles.potItem}>
+                <View style={styles.potDisplay}>
+                    <View style={styles.potImage}>
+                        <Text style={styles.potEmoji}>🪴</Text>
+                    </View>
+                </View>
 
-                {pot.price === 0 ? (
-                    <Text style={styles.freeText}>Free</Text>
-                ) : (
-                    <Text style={styles.potPrice}>🪙 {pot.price}</Text>
-                )}
+                <View style={styles.potInfo}>
+                    <Text style={styles.potName}>{pot.name}</Text>
+                    <View style={styles.priceContainer}>
+                        <Text style={styles.coinIcon}>🪙</Text>
+                        <Text style={styles.potPrice}>{pot.price}</Text>
+                    </View>
+                </View>
 
                 {isOwned ? (
-                    <View style={styles.ownedButton}>
-                        <Text style={styles.ownedButtonText}>✓ Owned</Text>
+                    <View style={styles.ownedBadge}>
+                        <Text style={styles.ownedText}>✓</Text>
                     </View>
                 ) : (
                     <TouchableOpacity
@@ -82,7 +86,7 @@ export default function ShopScreen({ navigation }) {
                             styles.buyButtonText,
                             !canAfford && styles.buyButtonTextDisabled
                         ]}>
-                            {canAfford ? 'Buy' : 'Not enough coins'}
+                            Buy
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -93,30 +97,23 @@ export default function ShopScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Buy New Pots</Text>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Text style={styles.backText}>←</Text>
+                </TouchableOpacity>
+                <Text style={styles.title}>Buy new pots!</Text>
                 <View style={styles.coinContainer}>
-                    <Text style={styles.coinText}>🪙 {coins}</Text>
+                    <Text style={styles.coinIcon}>🪙</Text>
+                    <Text style={styles.coinText}>{coins}</Text>
                 </View>
             </View>
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
-                    <Text style={styles.subtitle}>
-                        Choose different pots for your flower collection
-                    </Text>
-
                     <View style={styles.potsGrid}>
-                        {pots.map(pot => renderPot(pot))}
-                    </View>
-
-                    <View style={styles.infoBox}>
-                        <Text style={styles.infoTitle}>💡 How it works</Text>
-                        <Text style={styles.infoText}>
-                            • Buy pots to display your flowers in different styles{'\n'}
-                            • Each pot gives your flowers a unique look{'\n'}
-                            • Earn coins by discovering new flowers{'\n'}
-                            • Complete challenges for bonus coins
-                        </Text>
+                        {pots.map((pot, index) => renderPotItem(pot, index))}
                     </View>
                 </View>
             </ScrollView>
@@ -126,13 +123,7 @@ export default function ShopScreen({ navigation }) {
                     style={styles.actionButton}
                     onPress={() => navigation.navigate('Collection')}
                 >
-                    <Text style={styles.actionButtonText}>🌸 Collection</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => navigation.navigate('Camera')}
-                >
-                    <Text style={styles.actionButtonText}>📷 Collect More</Text>
+                    <Text style={styles.actionButtonText}>Back</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -142,7 +133,7 @@ export default function ShopScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f8f5f0',
     },
     header: {
         flexDirection: 'row',
@@ -150,25 +141,44 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    backText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#4a7c4a',
+        color: '#333',
+        flex: 1,
+        textAlign: 'center',
+        marginHorizontal: 20,
     },
     coinContainer: {
         backgroundColor: '#f39c12',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    coinIcon: {
+        fontSize: 14,
     },
     coinText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -178,57 +188,61 @@ const styles = StyleSheet.create({
     content: {
         padding: 20,
     },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        textAlign: 'center',
-        marginBottom: 30,
-    },
     potsGrid: {
-        gap: 20,
-        marginBottom: 30,
+        gap: 15,
     },
-    potCard: {
+    potItem: {
         backgroundColor: '#fff',
         padding: 20,
         borderRadius: 15,
+        flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    potDisplay: {
+        marginRight: 15,
     },
     potImage: {
-        width: 80,
-        height: 80,
-        resizeMode: 'contain',
-        marginBottom: 15,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    potEmoji: {
+        fontSize: 30,
+    },
+    potInfo: {
+        flex: 1,
     },
     potName: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#4a7c4a',
-        marginBottom: 10,
+        color: '#333',
+        marginBottom: 5,
+    },
+    priceContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
     },
     potPrice: {
         fontSize: 16,
+        fontWeight: 'bold',
         color: '#f39c12',
-        fontWeight: 'bold',
-        marginBottom: 15,
-    },
-    freeText: {
-        fontSize: 16,
-        color: '#27ae60',
-        fontWeight: 'bold',
-        marginBottom: 15,
     },
     buyButton: {
         backgroundColor: '#4a7c4a',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
-        borderRadius: 20,
-        minWidth: 120,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 15,
+        minWidth: 60,
+        alignItems: 'center',
     },
     buyButtonDisabled: {
         backgroundColor: '#ccc',
@@ -237,64 +251,40 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
     buyButtonTextDisabled: {
         color: '#999',
     },
-    ownedButton: {
+    ownedBadge: {
         backgroundColor: '#27ae60',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
+        width: 40,
+        height: 40,
         borderRadius: 20,
-        minWidth: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    ownedButtonText: {
+    ownedText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    infoBox: {
-        backgroundColor: '#e8f5e8',
-        padding: 20,
-        borderRadius: 15,
-        borderLeft: 5,
-        borderLeftColor: '#4a7c4a',
-    },
-    infoTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#4a7c4a',
-        marginBottom: 10,
-    },
-    infoText: {
-        fontSize: 14,
-        color: '#666',
-        lineHeight: 20,
     },
     bottomActions: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'center',
         padding: 20,
         backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
     },
     actionButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 30,
+        backgroundColor: '#888',
+        paddingHorizontal: 40,
         paddingVertical: 12,
         borderRadius: 20,
-        flex: 0.4,
     },
     actionButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
 });

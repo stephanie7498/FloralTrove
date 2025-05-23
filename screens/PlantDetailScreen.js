@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    Image,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -8,11 +7,9 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useAppContext } from '../context/AppContext';
 
 export default function PlantDetailScreen({ route, navigation }) {
     const { item, plant, pot } = route.params;
-    const { getPlantImage } = useAppContext();
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -34,44 +31,58 @@ export default function PlantDetailScreen({ route, navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Text style={styles.backText}>←</Text>
+                </TouchableOpacity>
+                <Text style={styles.title}>Plant Details</Text>
+                <View style={styles.headerSpacer} />
+            </View>
+
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
                     <View style={styles.plantDisplay}>
-                        <Image
-                            source={getPlantImage(item.plantId, item.potId)}
-                            style={styles.plantInPotImage}
-                        />
-                    </View>
-
-                    <View style={styles.infoCard}>
-                        <Text style={styles.plantName}>{plant.name}</Text>
-
-                        <View style={styles.rarityContainer}>
-                            <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>
-                                <Text style={styles.rarityText}>{plant.rarity.toUpperCase()}</Text>
+                        <View style={styles.plantContainer}>
+                            <View style={styles.potBase}>
+                                <View style={styles.potRim} />
+                                <View style={styles.soil} />
+                                <View style={styles.plant}>
+                                    <Text style={styles.plantEmoji}>🌸</Text>
+                                    <View style={styles.stem} />
+                                </View>
                             </View>
                         </View>
+                        <Text style={styles.plantName}>{plant.name}</Text>
+                        <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>
+                            <Text style={styles.rarityText}>{plant.rarity.toUpperCase()}</Text>
+                        </View>
+                    </View>
 
+                    <View style={styles.infoSection}>
+                        <Text style={styles.sectionTitle}>Description</Text>
                         <Text style={styles.description}>{plant.description}</Text>
+                    </View>
 
+                    <View style={styles.detailsSection}>
+                        <Text style={styles.sectionTitle}>Details</Text>
                         <View style={styles.detailsGrid}>
-                            <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>Pot Type</Text>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Pot Type:</Text>
                                 <Text style={styles.detailValue}>{pot.name}</Text>
                             </View>
-
-                            <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>Coin Value</Text>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Coin Value:</Text>
                                 <Text style={styles.detailValue}>🪙 {plant.coins}</Text>
                             </View>
-
-                            <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>Discovered</Text>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Discovered:</Text>
                                 <Text style={styles.detailValue}>{formatDate(item.discoveredAt)}</Text>
                             </View>
-
-                            <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>Rarity</Text>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Rarity:</Text>
                                 <Text style={[styles.detailValue, { color: getRarityColor(plant.rarity) }]}>
                                     {plant.rarity}
                                 </Text>
@@ -79,8 +90,8 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
-                    <View style={styles.factsCard}>
-                        <Text style={styles.factsTitle}>🌱 Plant Facts</Text>
+                    <View style={styles.factsSection}>
+                        <Text style={styles.sectionTitle}>🌱 Fun Facts</Text>
                         <View style={styles.factsList}>
                             {plant.id === 'lily_valley' && (
                                 <>
@@ -100,7 +111,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                             )}
                             {plant.id === 'daisy' && (
                                 <>
-                                    <Text style={styles.factItem}>• Name comes from days eye</Text>
+                                    <Text style={styles.factItem}>• Name comes from 'day's eye'</Text>
                                     <Text style={styles.factItem}>• Closes petals at night and in rain</Text>
                                     <Text style={styles.factItem}>• Symbol of innocence and purity</Text>
                                     <Text style={styles.factItem}>• Edible flowers used in salads</Text>
@@ -132,7 +143,37 @@ export default function PlantDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f8f5f0',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    backText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    headerSpacer: {
+        width: 40,
     },
     scrollView: {
         flex: 1,
@@ -142,42 +183,71 @@ const styles = StyleSheet.create({
     },
     plantDisplay: {
         alignItems: 'center',
-        marginBottom: 30,
         backgroundColor: '#fff',
         padding: 30,
         borderRadius: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    plantInPotImage: {
-        width: 150,
-        height: 180,
-        resizeMode: 'contain',
-    },
-    infoCard: {
-        backgroundColor: '#fff',
-        padding: 25,
-        borderRadius: 20,
         marginBottom: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    plantContainer: {
+        marginBottom: 20,
+    },
+    potBase: {
+        position: 'relative',
+        width: 80,
+        height: 100,
+    },
+    potRim: {
+        position: 'absolute',
+        top: 0,
+        left: 8,
+        right: 8,
+        height: 10,
+        backgroundColor: '#8B4513',
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: '#654321',
+    },
+    soil: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        right: 10,
+        bottom: 20,
+        backgroundColor: '#8B4513',
+        borderBottomLeftRadius: 25,
+        borderBottomRightRadius: 25,
+        borderWidth: 1,
+        borderColor: '#654321',
+        borderTopWidth: 0,
+    },
+    plant: {
+        position: 'absolute',
+        top: -15,
+        left: '50%',
+        marginLeft: -20,
+        alignItems: 'center',
+    },
+    plantEmoji: {
+        fontSize: 40,
+        zIndex: 4,
+    },
+    stem: {
+        width: 4,
+        height: 25,
+        backgroundColor: '#4a7c4a',
+        marginTop: -8,
+        zIndex: 1,
     },
     plantName: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#4a7c4a',
-        textAlign: 'center',
-        marginBottom: 15,
-    },
-    rarityContainer: {
-        alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 10,
     },
     rarityBadge: {
         paddingHorizontal: 15,
@@ -189,17 +259,43 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
     },
+    infoSection: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 15,
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#4a7c4a',
+        marginBottom: 15,
+    },
     description: {
         fontSize: 16,
         color: '#666',
-        textAlign: 'center',
-        marginBottom: 25,
-        lineHeight: 22,
+        lineHeight: 24,
+    },
+    detailsSection: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 15,
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
     detailsGrid: {
-        gap: 15,
+        gap: 12,
     },
-    detailItem: {
+    detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -217,18 +313,12 @@ const styles = StyleSheet.create({
         color: '#333',
         fontWeight: 'bold',
     },
-    factsCard: {
+    factsSection: {
         backgroundColor: '#e8f5e8',
-        padding: 25,
-        borderRadius: 20,
-        borderLeft: 5,
+        padding: 20,
+        borderRadius: 15,
+        borderLeftWidth: 4,
         borderLeftColor: '#4a7c4a',
-    },
-    factsTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#4a7c4a',
-        marginBottom: 15,
     },
     factsList: {
         gap: 8,
@@ -243,11 +333,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         padding: 20,
         backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
         gap: 10,
     },
     actionButton: {
@@ -256,6 +343,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 20,
         flex: 1,
+        alignItems: 'center',
     },
     secondaryButton: {
         backgroundColor: '#888',
@@ -264,6 +352,5 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
 });

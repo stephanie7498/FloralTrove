@@ -18,39 +18,49 @@ export default function App() {
                 <Stack.Navigator
                     initialRouteName="Home"
                     screenOptions={{
-                        headerStyle: {
-                            backgroundColor: '#4a7c4a',
-                        },
-                        headerTintColor: '#fff',
-                        headerTitleStyle: {
-                            fontWeight: 'bold',
-                        },
+                        headerShown: false,
+                        cardStyle: { backgroundColor: '#f8f5f0' },
                     }}
                 >
                     <Stack.Screen
                         name="Home"
                         component={HomeScreen}
-                        options={{ title: 'Floral Trove' }}
+                        options={{
+                            title: 'Flora Trove',
+                            headerShown: false
+                        }}
                     />
                     <Stack.Screen
                         name="Collection"
                         component={CollectionScreen}
-                        options={{ title: 'Your Collection' }}
+                        options={{
+                            title: 'Your Collection',
+                            headerShown: false
+                        }}
                     />
                     <Stack.Screen
                         name="Camera"
                         component={CameraScreen}
-                        options={{ title: 'Take Picture' }}
+                        options={{
+                            title: 'Take Picture',
+                            headerShown: false
+                        }}
                     />
                     <Stack.Screen
                         name="Shop"
                         component={ShopScreen}
-                        options={{ title: 'Buy New Pots' }}
+                        options={{
+                            title: 'Buy New Pots',
+                            headerShown: false
+                        }}
                     />
                     <Stack.Screen
                         name="PlantDetail"
                         component={PlantDetailScreen}
-                        options={{ title: 'Plant Details' }}
+                        options={{
+                            title: 'Plant Details',
+                            headerShown: false
+                        }}
                     />
                 </Stack.Navigator>
             </NavigationContainer>

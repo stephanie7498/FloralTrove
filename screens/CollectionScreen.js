@@ -10,20 +10,18 @@ import {
 import { useAppContext } from '../context/AppContext';
 
 export default function CollectionScreen({ navigation }) {
-    const { collection, getPlantData, getPotData, getPlantImage, coins } = useAppContext();
+    const { collection, getPlantData, getPotData, coins } = useAppContext();
     const plants = getPlantData();
     const pots = getPotData();
 
     const getShelfItems = () => {
-        const shelves = [[], [], []]; // 3 shelves
-
+        const shelves = [[], [], []];
         collection.forEach((item, index) => {
             const shelfIndex = Math.floor(index / 3);
             if (shelfIndex < 3) {
                 shelves[shelfIndex].push(item);
             }
         });
-
         return shelves;
     };
 
@@ -39,25 +37,37 @@ export default function CollectionScreen({ navigation }) {
                 style={styles.plantContainer}
                 onPress={() => navigation.navigate('PlantDetail', { item, plant, pot })}
             >
-                <View style={styles.placeholderPlant}>
-                    <Text style={styles.placeholderEmoji}>🌸</Text>
+                <View style={styles.potBase}>
+                    <View style={styles.potRim} />
+                    <View style={styles.soil} />
+                    <View style={styles.plant}>
+                        <Text style={styles.plantEmoji}>🌸</Text>
+                        <View style={styles.stem} />
+                    </View>
                 </View>
-                <Text style={styles.plantName}>{plant.name}</Text>
             </TouchableOpacity>
         );
     };
 
+    const renderEmptySpot = (index) => (
+        <View key={`empty-${index}`} style={styles.emptyPot}>
+            <View style={styles.potBase}>
+                <View style={[styles.potRim, styles.emptyPotRim]} />
+                <View style={[styles.soil, styles.emptySoil]} />
+            </View>
+        </View>
+    );
+
     const renderShelf = (shelfItems, shelfIndex) => (
         <View key={shelfIndex} style={styles.shelfContainer}>
-            <View style={styles.shelfPlaceholder} />
             <View style={styles.shelfContent}>
-                {shelfItems.map(item => renderPlantInPot(item))}
-                {shelfItems.length < 3 && (
-                    Array.from({ length: 3 - shelfItems.length }).map((_, index) => (
-                        <View key={`empty-${index}`} style={styles.emptySpot} />
-                    ))
-                )}
+                {Array.from({ length: 3 }).map((_, spotIndex) => {
+                    const item = shelfItems[spotIndex];
+                    return item ? renderPlantInPot(item) : renderEmptySpot(`${shelfIndex}-${spotIndex}`);
+                })}
             </View>
+            <View style={styles.shelfBoard} />
+            <View style={styles.shelfSupport} />
         </View>
     );
 
@@ -65,52 +75,50 @@ export default function CollectionScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.background}>
-                {/* Temporary colored background */}
-                <View style={styles.header}>
-                    <Text style={styles.title}>Your Collection</Text>
-                    <View style={styles.coinContainer}>
-                        <Text style={styles.coinText}>🪙 {coins}</Text>
-                    </View>
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Text style={styles.backIcon}>✏️</Text>
+                </TouchableOpacity>
+                <Text style={styles.title}>Your collection</Text>
+                <View style={styles.coinContainer}>
+                    <Text style={styles.coinText}>🪙 {coins}</Text>
                 </View>
+            </View>
 
-                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                    <View style={styles.content}>
-                        {collection.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <Text style={styles.emptyTitle}>Your collection is empty</Text>
-                                <Text style={styles.emptySubtitle}>
-                                    Go take pictures of flowers to start collecting!
-                                </Text>
-                                <TouchableOpacity
-                                    style={styles.collectButton}
-                                    onPress={() => navigation.navigate('Camera')}
-                                >
-                                    <Text style={styles.collectButtonText}>📷 Start Collecting</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <View style={styles.shelvesContainer}>
-                                {shelves.map((shelfItems, index) => renderShelf(shelfItems, index))}
-                            </View>
-                        )}
-                    </View>
-                </ScrollView>
-
-                <View style={styles.bottomActions}>
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => navigation.navigate('Camera')}
-                    >
-                        <Text style={styles.actionButtonText}>📷 Collect</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => navigation.navigate('Shop')}
-                    >
-                        <Text style={styles.actionButtonText}>🛒 Shop</Text>
-                    </TouchableOpacity>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                <View style={styles.content}>
+                    {collection.length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>Your collection is empty</Text>
+                            <Text style={styles.emptySubtitle}>
+                                Start collecting flowers to fill your shelves!
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.collectButton}
+                                onPress={() => navigation.navigate('Camera')}
+                            >
+                                <Text style={styles.collectButtonText}>📷 Collect</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={styles.shelvesContainer}>
+                            {shelves.map((shelfItems, index) => renderShelf(shelfItems, index))}
+                        </View>
+                    )}
                 </View>
+            </ScrollView>
+
+            <View style={styles.bottomActions}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('Camera')}
+                >
+                    <Text style={styles.actionButtonIcon}>📷</Text>
+                    <Text style={styles.actionButtonText}>Collect</Text>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
@@ -119,31 +127,41 @@ export default function CollectionScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    background: {
-        flex: 1,
-        backgroundColor: '#98FB98', // Light green placeholder
+        backgroundColor: '#f8f5f0',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    backIcon: {
+        fontSize: 18,
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#4a7c4a',
+        color: '#333',
     },
     coinContainer: {
         backgroundColor: '#f39c12',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
     },
     coinText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -184,19 +202,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     shelvesContainer: {
-        gap: 40,
+        gap: 60,
     },
     shelfContainer: {
+        height: 140,
         position: 'relative',
-        height: 120,
-    },
-    shelfPlaceholder: {
-        width: '100%',
-        height: 20,
-        backgroundColor: '#8B4513',
-        position: 'absolute',
-        bottom: 0,
-        borderRadius: 5,
     },
     shelfContent: {
         flexDirection: 'row',
@@ -204,52 +214,114 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         height: 100,
         paddingHorizontal: 20,
+        zIndex: 2,
+    },
+    shelfBoard: {
+        position: 'absolute',
+        bottom: 20,
+        left: 0,
+        right: 0,
+        height: 12,
+        backgroundColor: '#8B4513',
+        borderRadius: 6,
+        zIndex: 1,
+    },
+    shelfSupport: {
+        position: 'absolute',
+        bottom: 0,
+        left: '50%',
+        marginLeft: -4,
+        width: 8,
+        height: 20,
+        backgroundColor: '#654321',
+        borderRadius: 4,
     },
     plantContainer: {
         alignItems: 'center',
-        width: 80,
+        zIndex: 3,
     },
-    placeholderPlant: {
-        width: 70,
-        height: 80,
-        backgroundColor: '#DEB887',
-        borderRadius: 10,
-        justifyContent: 'center',
+    emptyPot: {
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#8B4513',
+        zIndex: 3,
     },
-    placeholderEmoji: {
+    potBase: {
+        position: 'relative',
+        width: 60,
+        height: 70,
+    },
+    potRim: {
+        position: 'absolute',
+        top: 0,
+        left: 5,
+        right: 5,
+        height: 8,
+        backgroundColor: '#8B4513',
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: '#654321',
+    },
+    emptyPotRim: {
+        backgroundColor: '#d0d0d0',
+        borderColor: '#b0b0b0',
+    },
+    soil: {
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        right: 8,
+        bottom: 15,
+        backgroundColor: '#8B4513',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        borderWidth: 1,
+        borderColor: '#654321',
+        borderTopWidth: 0,
+    },
+    emptySoil: {
+        backgroundColor: '#e0e0e0',
+        borderColor: '#c0c0c0',
+    },
+    plant: {
+        position: 'absolute',
+        top: -10,
+        left: '50%',
+        marginLeft: -15,
+        alignItems: 'center',
+    },
+    plantEmoji: {
         fontSize: 30,
+        zIndex: 4,
     },
-    plantName: {
-        fontSize: 12,
-        color: '#4a7c4a',
-        textAlign: 'center',
-        marginTop: 5,
-        fontWeight: '500',
-    },
-    emptySpot: {
-        width: 80,
-        height: 60,
+    stem: {
+        width: 3,
+        height: 20,
+        backgroundColor: '#4a7c4a',
+        marginTop: -5,
+        zIndex: 1,
     },
     bottomActions: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'center',
         padding: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
     },
     actionButton: {
         backgroundColor: '#4a7c4a',
         paddingHorizontal: 30,
         paddingVertical: 12,
         borderRadius: 20,
-        flex: 0.4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    actionButtonIcon: {
+        fontSize: 18,
     },
     actionButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
 });

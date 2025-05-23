@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
+    ImageBackground,
+    Modal,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -12,99 +13,171 @@ import { useAppContext } from '../context/AppContext';
 
 export default function CameraScreen({ navigation }) {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [showFoundModal, setShowFoundModal] = useState(false);
+    const [foundPlant, setFoundPlant] = useState(null);
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [recognitionFailed, setRecognitionFailed] = useState(false);
+
     const { addPlantToCollection, getPlantData } = useAppContext();
     const plants = getPlantData();
 
     const simulatePlantDetection = () => {
+        if (isProcessing) return;
+
         setIsProcessing(true);
+        setRecognitionFailed(false);
 
-        // Mock AI recognition - randomly select a plant
         setTimeout(() => {
-            const randomPlant = plants[Math.floor(Math.random() * plants.length)];
-            const success = Math.random() > 0.3; // 70% success rate
-
+            const success = Math.random() > 0.3;
             setIsProcessing(false);
 
             if (success) {
+                const randomPlant = plants[Math.floor(Math.random() * plants.length)];
                 const wasAdded = addPlantToCollection(randomPlant.id);
 
                 if (wasAdded) {
-                    Alert.alert(
-                        "Success! 🌸",
-                        `You found a ${randomPlant.name}! Added to your collection. (+${randomPlant.coins} coins)`,
-                        [
-                            { text: "To Collection", onPress: () => navigation.navigate('Collection') },
-                            { text: "Find More", onPress: () => { } }
-                        ]
-                    );
+                    setFoundPlant(randomPlant);
+                    setShowFoundModal(true);
                 } else {
-                    Alert.alert(
-                        "Already Found!",
-                        `You already have a ${randomPlant.name} in your collection.`,
-                        [{ text: "OK" }]
-                    );
+                    setRecognitionFailed(true);
                 }
             } else {
-                Alert.alert(
-                    "No Flower Detected",
-                    "Try again! Make sure you're pointing at a flower.",
-                    [{ text: "Try Again" }]
-                );
+                setRecognitionFailed(true);
             }
         }, 2000);
     };
 
+    const closeFoundModal = () => {
+        setShowFoundModal(false);
+        setFoundPlant(null);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>🌸 Flower Scanner</Text>
-                    <Text style={styles.subtitle}>
-                        Simulate finding flowers in nature
-                    </Text>
-                </View>
+            <ImageBackground
+                source={{ uri: 'https://images.unsplash.com/photo-1574690805191-94f11dfbc5a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80' }}
+                style={styles.cameraView}
+                resizeMode="cover"
+            >
+                <View style={styles.cameraOverlay}>
+                    {/* Top bar */}
+                    <View style={styles.topBar}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backText}>←</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.infoButton}
+                            onPress={() => setShowInstructions(true)}
+                        >
+                            <Text style={styles.infoText}>How it works</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                <View style={styles.scanArea}>
-                    <View style={styles.viewfinder}>
-                        <Text style={styles.viewfinderText}>
-                            {isProcessing ? "🔍 Scanning..." : "📱 Tap to Scan"}
-                        </Text>
+                    {/* Center viewfinder */}
+                    <View style={styles.viewfinderContainer}>
+                        <View style={styles.viewfinder}>
+                            <View style={styles.viewfinderCorner} />
+                            <View style={[styles.viewfinderCorner, styles.topRight]} />
+                            <View style={[styles.viewfinderCorner, styles.bottomLeft]} />
+                            <View style={[styles.viewfinderCorner, styles.bottomRight]} />
+                        </View>
+
+                        {isProcessing && (
+                            <View style={styles.processingContainer}>
+                                <ActivityIndicator size="large" color="#fff" />
+                                <Text style={styles.processingText}>Scanning...</Text>
+                            </View>
+                        )}
+
+                        {recognitionFailed && (
+                            <View style={styles.failureContainer}>
+                                <Text style={styles.failureTitle}>Can't recognize flower.</Text>
+                                <TouchableOpacity
+                                    style={styles.tryAgainButton}
+                                    onPress={() => setRecognitionFailed(false)}
+                                >
+                                    <Text style={styles.tryAgainText}>Try again</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Bottom controls */}
+                    <View style={styles.bottomControls}>
+                        <TouchableOpacity
+                            style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
+                            onPress={simulatePlantDetection}
+                            disabled={isProcessing}
+                        >
+                            <Text style={styles.captureIcon}>📷</Text>
+                            <Text style={styles.captureText}>Take picture</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
+            </ImageBackground>
 
-                <View style={styles.controls}>
-                    <TouchableOpacity
-                        style={[styles.scanButton, isProcessing && styles.scanButtonDisabled]}
-                        onPress={simulatePlantDetection}
-                        disabled={isProcessing}
-                    >
-                        {isProcessing ? (
-                            <ActivityIndicator size="large" color="#fff" />
-                        ) : (
-                            <Text style={styles.scanButtonText}>🔍 Simulate Scan</Text>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <Text style={styles.backButtonText}>← Back to Home</Text>
-                    </TouchableOpacity>
+            {/* Found Plant Modal */}
+            <Modal
+                visible={showFoundModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={closeFoundModal}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>You found a Lily of the valley!</Text>
+                        <View style={styles.modalPlant}>
+                            <Text style={styles.modalPlantEmoji}>🌸</Text>
+                        </View>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalButton}
+                                onPress={() => {
+                                    closeFoundModal();
+                                    navigation.navigate('Collection');
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>To collection</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonSecondary]}
+                                onPress={closeFoundModal}
+                            >
+                                <Text style={styles.modalButtonText}>Collect More</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
+            </Modal>
 
-                <View style={styles.instructions}>
-                    <Text style={styles.instructionText}>
-                        💡 This simulates finding flowers with your camera
-                    </Text>
-                    <Text style={styles.instructionText}>
-                        🎯 70% chance of finding a flower
-                    </Text>
-                    <Text style={styles.instructionText}>
-                        🪙 Earn coins for each discovery
-                    </Text>
+            {/* Instructions Modal */}
+            <Modal
+                visible={showInstructions}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowInstructions(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.instructionsContent}>
+                        <Text style={styles.instructionsTitle}>How it works</Text>
+                        <Text style={styles.instructionsText}>
+                            Point your camera at a flower and snap a picture{'\n'}
+                            Go to your collection or{'\n'}
+                            collect more flowers!{'\n\n'}
+                            Have fun!
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.okButton}
+                            onPress={() => setShowInstructions(false)}
+                        >
+                            <Text style={styles.okButtonText}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -112,88 +185,229 @@ export default function CameraScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#87CEEB',
+        backgroundColor: '#000',
     },
-    content: {
+    cameraView: {
         flex: 1,
+    },
+    cameraOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         padding: 20,
-    },
-    header: {
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#4a7c4a',
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        textAlign: 'center',
-    },
-    scanArea: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    viewfinder: {
-        width: 250,
-        height: 250,
-        borderWidth: 3,
-        borderColor: '#4a7c4a',
-        borderStyle: 'dashed',
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    viewfinderText: {
-        fontSize: 18,
-        color: '#4a7c4a',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    controls: {
-        alignItems: 'center',
-        gap: 20,
-    },
-    scanButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 40,
-        paddingVertical: 15,
-        borderRadius: 25,
-        minWidth: 200,
-        alignItems: 'center',
-    },
-    scanButtonDisabled: {
-        backgroundColor: '#888',
-    },
-    scanButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        paddingTop: 60,
     },
     backButton: {
-        backgroundColor: '#888',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        width: 40,
+        height: 40,
         borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    backButtonText: {
+    backText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    infoButton: {
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 15,
+    },
+    infoText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    viewfinderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    viewfinder: {
+        width: 200,
+        height: 200,
+        position: 'relative',
+    },
+    viewfinderCorner: {
+        position: 'absolute',
+        width: 20,
+        height: 20,
+        borderColor: '#fff',
+        top: 0,
+        left: 0,
+        borderTopWidth: 3,
+        borderLeftWidth: 3,
+    },
+    topRight: {
+        top: 0,
+        right: 0,
+        left: 'auto',
+        borderTopWidth: 3,
+        borderRightWidth: 3,
+        borderLeftWidth: 0,
+    },
+    bottomLeft: {
+        bottom: 0,
+        top: 'auto',
+        borderBottomWidth: 3,
+        borderLeftWidth: 3,
+        borderTopWidth: 0,
+    },
+    bottomRight: {
+        bottom: 0,
+        right: 0,
+        top: 'auto',
+        left: 'auto',
+        borderBottomWidth: 3,
+        borderRightWidth: 3,
+        borderTopWidth: 0,
+        borderLeftWidth: 0,
+    },
+    processingContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        gap: 10,
+    },
+    processingText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    failureContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 20,
+        borderRadius: 15,
+        gap: 15,
+    },
+    failureTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    tryAgainButton: {
+        backgroundColor: '#4a7c4a',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 15,
+    },
+    tryAgainText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    instructions: {
-        marginTop: 30,
+    bottomControls: {
+        padding: 40,
         alignItems: 'center',
-        gap: 5,
     },
-    instructionText: {
-        fontSize: 14,
-        color: '#666',
+    captureButton: {
+        backgroundColor: 'rgba(74, 124, 74, 0.9)',
+        paddingHorizontal: 30,
+        paddingVertical: 15,
+        borderRadius: 25,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.8)',
+    },
+    captureButtonDisabled: {
+        backgroundColor: 'rgba(128, 128, 128, 0.6)',
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+    },
+    captureIcon: {
+        fontSize: 20,
+    },
+    captureText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 30,
+        borderRadius: 20,
+        alignItems: 'center',
+        width: '80%',
+        maxWidth: 300,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#4a7c4a',
         textAlign: 'center',
+        marginBottom: 20,
+    },
+    modalPlant: {
+        marginBottom: 25,
+    },
+    modalPlantEmoji: {
+        fontSize: 60,
+    },
+    modalButtons: {
+        gap: 12,
+        width: '100%',
+    },
+    modalButton: {
+        backgroundColor: '#4a7c4a',
+        paddingVertical: 12,
+        borderRadius: 15,
+        alignItems: 'center',
+    },
+    modalButtonSecondary: {
+        backgroundColor: '#888',
+    },
+    modalButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    instructionsContent: {
+        backgroundColor: '#fff',
+        padding: 30,
+        borderRadius: 20,
+        alignItems: 'center',
+        width: '85%',
+        maxWidth: 320,
+    },
+    instructionsTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#4a7c4a',
+        marginBottom: 20,
+    },
+    instructionsText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 25,
+    },
+    okButton: {
+        backgroundColor: '#4a7c4a',
+        paddingHorizontal: 40,
+        paddingVertical: 12,
+        borderRadius: 15,
+    },
+    okButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });

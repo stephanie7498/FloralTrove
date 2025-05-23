@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    ImageBackground,
     SafeAreaView,
     StatusBar,
     StyleSheet,
@@ -16,11 +17,14 @@ export default function HomeScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <View style={styles.background}>
-                {/* Temporary colored background instead of image */}
+            <ImageBackground
+                source={{ uri: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2371&q=80' }}
+                style={styles.background}
+                resizeMode="cover"
+            >
                 <View style={styles.overlay}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Floral Trove</Text>
+                        <Text style={styles.title}>Flora{'\n'}Trove</Text>
                         <View style={styles.coinContainer}>
                             <Text style={styles.coinText}>🪙 {coins}</Text>
                         </View>
@@ -30,43 +34,46 @@ export default function HomeScreen({ navigation }) {
                         {activeChallenge && (
                             <View style={styles.challengeCard}>
                                 <Text style={styles.challengeTitle}>Challenge</Text>
-                                <Text style={styles.challengeText}>{activeChallenge.title}</Text>
-                                <Text style={styles.challengeProgress}>
-                                    {activeChallenge.progress}/{activeChallenge.target}
-                                </Text>
-                                <Text style={styles.challengeReward}>🪙 {activeChallenge.reward}</Text>
+                                <Text style={styles.challengeDescription}>{activeChallenge.title}</Text>
+                                <View style={styles.progressContainer}>
+                                    <Text style={styles.progressText}>
+                                        {activeChallenge.progress}/{activeChallenge.target}
+                                    </Text>
+                                    <Text style={styles.rewardText}>🪙 {activeChallenge.reward}</Text>
+                                </View>
                             </View>
                         )}
 
                         <TouchableOpacity
-                            style={styles.mainButton}
+                            style={styles.collectButton}
                             onPress={() => navigation.navigate('Camera')}
                         >
-                            <Text style={styles.buttonText}>📷 Take Picture</Text>
+                            <Text style={styles.collectButtonText}>Collect now</Text>
                         </TouchableOpacity>
+                    </View>
 
+                    <View style={styles.bottomNav}>
                         <TouchableOpacity
-                            style={styles.secondaryButton}
+                            style={styles.navButton}
                             onPress={() => navigation.navigate('Collection')}
                         >
-                            <Text style={styles.buttonText}>🌸 Your Collection</Text>
+                            <Text style={styles.navIcon}>📚</Text>
                         </TouchableOpacity>
-
                         <TouchableOpacity
-                            style={styles.secondaryButton}
+                            style={styles.navButton}
+                            onPress={() => navigation.navigate('Camera')}
+                        >
+                            <Text style={styles.navIcon}>📷</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.navButton}
                             onPress={() => navigation.navigate('Shop')}
                         >
-                            <Text style={styles.buttonText}>🛒 Buy New Pots</Text>
+                            <Text style={styles.navIcon}>🛒</Text>
                         </TouchableOpacity>
                     </View>
-
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>
-                            Point your camera at a flower and snap a picture
-                        </Text>
-                    </View>
                 </View>
-            </View>
+            </ImageBackground>
         </SafeAreaView>
     );
 }
@@ -77,7 +84,6 @@ const styles = StyleSheet.create({
     },
     background: {
         flex: 1,
-        backgroundColor: '#87CEEB', // Sky blue placeholder
     },
     overlay: {
         flex: 1,
@@ -87,99 +93,102 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginTop: 20,
     },
     title: {
-        fontSize: 32,
+        fontSize: 36,
         fontWeight: 'bold',
         color: '#fff',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(0, 0, 0, 0.7)',
         textShadowOffset: { width: 2, height: 2 },
-        textShadowRadius: 3,
+        textShadowRadius: 4,
+        lineHeight: 40,
     },
     coinContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     coinText: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        color: '#4a7c4a',
+        color: '#333',
     },
     content: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 20,
     },
     challengeCard: {
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         padding: 20,
         borderRadius: 15,
+        marginBottom: 40,
+        width: '90%',
         alignItems: 'center',
-        marginBottom: 20,
-        minWidth: 250,
     },
     challengeTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#4a7c4a',
-        marginBottom: 5,
+        marginBottom: 8,
     },
-    challengeText: {
+    challengeDescription: {
         fontSize: 16,
         color: '#333',
         textAlign: 'center',
-        marginBottom: 10,
+        marginBottom: 15,
     },
-    challengeProgress: {
+    progressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 20,
+    },
+    progressText: {
         fontSize: 20,
         fontWeight: 'bold',
         color: '#4a7c4a',
     },
-    challengeReward: {
+    rewardText: {
         fontSize: 16,
+        fontWeight: 'bold',
         color: '#f39c12',
-        marginTop: 5,
     },
-    mainButton: {
-        backgroundColor: '#4a7c4a',
+    collectButton: {
+        backgroundColor: 'rgba(74, 124, 74, 0.9)',
         paddingHorizontal: 40,
         paddingVertical: 15,
         borderRadius: 25,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    secondaryButton: {
-        backgroundColor: 'rgba(74, 124, 74, 0.8)',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
-        borderRadius: 20,
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: 'rgba(255, 255, 255, 0.8)',
     },
-    buttonText: {
+    collectButtonText: {
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
     },
-    footer: {
+    bottomNav: {
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
+        gap: 40,
         marginBottom: 20,
     },
-    footerText: {
-        color: '#fff',
-        fontSize: 16,
-        textAlign: 'center',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+    navButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        padding: 15,
+        borderRadius: 50,
+        width: 60,
+        height: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    navIcon: {
+        fontSize: 24,
     },
 });
