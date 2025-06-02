@@ -10,7 +10,23 @@ import {
 import { useAppContext } from '../context/AppContext';
 
 export default function CollectionScreen({ navigation }) {
-    const { collection, getPlantData, getPotData, coins } = useAppContext();
+    // Add error handling for context
+    let contextData;
+    try {
+        contextData = useAppContext();
+    } catch (error) {
+        console.log('Context error:', error);
+        // Fallback data if context fails
+        contextData = {
+            collection: [],
+            getPlantData: () => [],
+            getPotData: () => [],
+            getPlantImage: () => '🌸',
+            coins: 0
+        };
+    }
+
+    const { collection, getPlantData, getPotData, getPlantImage, coins } = contextData;
     const plants = getPlantData();
     const pots = getPotData();
 
@@ -41,7 +57,7 @@ export default function CollectionScreen({ navigation }) {
                     <View style={styles.potRim} />
                     <View style={styles.soil} />
                     <View style={styles.plant}>
-                        <Text style={styles.plantEmoji}>🌸</Text>
+                        <Text style={styles.plantEmoji}>{getPlantImage(item.plantId, item.potId)}</Text>
                         <View style={styles.stem} />
                     </View>
                 </View>

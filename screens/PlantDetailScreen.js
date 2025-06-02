@@ -7,9 +7,11 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useAppContext } from '../context/AppContext';
 
 export default function PlantDetailScreen({ route, navigation }) {
     const { item, plant, pot } = route.params;
+    const { getPlantImage } = useAppContext();
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -46,14 +48,31 @@ export default function PlantDetailScreen({ route, navigation }) {
                 <View style={styles.content}>
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
-                            <View style={styles.potBase}>
-                                <View style={styles.potRim} />
-                                <View style={styles.soil} />
-                                <View style={styles.plant}>
-                                    <Text style={styles.plantEmoji}>🌸</Text>
-                                    <View style={styles.stem} />
-                                </View>
-                            </View>
+                            {(() => {
+                                const plantImageData = getPlantImage(item.plantId, item.potId);
+                                if (plantImageData.type === 'image' && plantImageData.require()) {
+                                    return (
+                                        <Image
+                                            source={plantImageData.require()}
+                                            style={styles.plantInPotImage}
+                                            resizeMode="contain"
+                                        />
+                                    );
+                                } else {
+                                    return (
+                                        <View style={styles.potBase}>
+                                            <View style={styles.potRim} />
+                                            <View style={styles.soil} />
+                                            <View style={styles.plant}>
+                                                <Text style={styles.plantEmoji}>
+                                                    {plantImageData.type === 'emoji' ? plantImageData.emoji : '🌸'}
+                                                </Text>
+                                                <View style={styles.stem} />
+                                            </View>
+                                        </View>
+                                    );
+                                }
+                            })()}
                         </View>
                         <Text style={styles.plantName}>{plant.name}</Text>
                         <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>

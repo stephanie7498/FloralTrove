@@ -18,7 +18,7 @@ export default function HomeScreen({ navigation }) {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
             <ImageBackground
-                source={{ uri: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2371&q=80' }}
+                source={require('../assets/images/backgrounds/background_openingsscherm.png')}
                 style={styles.background}
                 resizeMode="cover"
             >
@@ -46,7 +46,7 @@ export default function HomeScreen({ navigation }) {
 
                         <TouchableOpacity
                             style={styles.collectButton}
-                            onPress={() => navigation.navigate('Camera')}
+                            onPress={() => navigation.navigate('Collection')}
                         >
                             <Text style={styles.collectButtonText}>Collect now</Text>
                         </TouchableOpacity>

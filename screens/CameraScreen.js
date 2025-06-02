@@ -18,7 +18,7 @@ export default function CameraScreen({ navigation }) {
     const [showInstructions, setShowInstructions] = useState(false);
     const [recognitionFailed, setRecognitionFailed] = useState(false);
 
-    const { addPlantToCollection, getPlantData } = useAppContext();
+    const { addPlantToCollection, getPlantData, getPlantImage } = useAppContext();
     const plants = getPlantData();
 
     const simulatePlantDetection = () => {
@@ -55,7 +55,7 @@ export default function CameraScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
             <ImageBackground
-                source={{ uri: 'https://images.unsplash.com/photo-1574690805191-94f11dfbc5a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80' }}
+                source={require('../assets/images/backgrounds/background_challenges.png')}
                 style={styles.cameraView}
                 resizeMode="cover"
             >
@@ -128,9 +128,15 @@ export default function CameraScreen({ navigation }) {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>You found a Lily of the valley!</Text>
+                        <Text style={styles.modalTitle}>
+                            You found a {foundPlant?.name}!
+                        </Text>
                         <View style={styles.modalPlant}>
-                            <Text style={styles.modalPlantEmoji}>🌸</Text>
+                            {foundPlant && (
+                                <Text style={styles.modalPlantEmoji}>
+                                    {getPlantImage(foundPlant.id, 'basic')}
+                                </Text>
+                            )}
                         </View>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity

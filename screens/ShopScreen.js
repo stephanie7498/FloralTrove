@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     Alert,
+    ImageBackground,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -56,7 +57,7 @@ export default function ShopScreen({ navigation }) {
         return (
             <View key={pot.id} style={styles.potItem}>
                 <View style={styles.potDisplay}>
-                    <View style={styles.potImage}>
+                    <View style={styles.potImageContainer}>
                         <Text style={styles.potEmoji}>🪴</Text>
                     </View>
                 </View>
@@ -96,36 +97,44 @@ export default function ShopScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Text style={styles.backText}>←</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>Buy new pots!</Text>
-                <View style={styles.coinContainer}>
-                    <Text style={styles.coinIcon}>🪙</Text>
-                    <Text style={styles.coinText}>{coins}</Text>
-                </View>
-            </View>
+            <ImageBackground
+                source={require('../assets/images/backgrounds/background_shop.png')}
+                style={styles.background}
+                resizeMode="cover"
+            >
+                <View style={styles.overlay}>
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backText}>←</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.title}>Buy new pots!</Text>
+                        <View style={styles.coinContainer}>
+                            <Text style={styles.coinIcon}>🪙</Text>
+                            <Text style={styles.coinText}>{coins}</Text>
+                        </View>
+                    </View>
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                <View style={styles.content}>
-                    <View style={styles.potsGrid}>
-                        {pots.map((pot, index) => renderPotItem(pot, index))}
+                    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                        <View style={styles.content}>
+                            <View style={styles.potsGrid}>
+                                {pots.map((pot, index) => renderPotItem(pot, index))}
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    <View style={styles.bottomActions}>
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => navigation.navigate('Collection')}
+                        >
+                            <Text style={styles.actionButtonText}>Back</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
-            </ScrollView>
-
-            <View style={styles.bottomActions}>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => navigation.navigate('Collection')}
-                >
-                    <Text style={styles.actionButtonText}>Back</Text>
-                </TouchableOpacity>
-            </View>
+            </ImageBackground>
         </SafeAreaView>
     );
 }
@@ -133,14 +142,20 @@ export default function ShopScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f5f0',
+    },
+    background: {
+        flex: 1,
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
     },
@@ -192,7 +207,7 @@ const styles = StyleSheet.create({
         gap: 15,
     },
     potItem: {
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         padding: 20,
         borderRadius: 15,
         flexDirection: 'row',
@@ -206,7 +221,7 @@ const styles = StyleSheet.create({
     potDisplay: {
         marginRight: 15,
     },
-    potImage: {
+    potImageContainer: {
         width: 60,
         height: 60,
         borderRadius: 30,
@@ -272,7 +287,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderTopWidth: 1,
         borderTopColor: '#e0e0e0',
     },
