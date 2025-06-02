@@ -1,14 +1,18 @@
 {
   "expo": {
-    "name": "Floral Trove",
-    "slug": "floral-trove",
+    "name": "Flora Trove",
+    "slug": "flora-trove",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "light",
     "platforms": [
       "ios",
+      "android",
       "web"
     ],
     "splash": {
+      "image": "./assets/images/splash-icon.png",
       "backgroundColor": "#4a7c4a",
       "resizeMode": "contain"
     },
@@ -16,8 +20,25 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.floratrove.app"
     },
-    "web": {}
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#4a7c4a"
+      },
+      "package": "com.floratrove.app"
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

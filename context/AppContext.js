@@ -1,343 +1,189 @@
-import React from 'react';
-import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
-import { useAppContext } from '../context/AppContext';
+import React, { createContext, useContext, useState } from 'react';
 
-export default function CollectionScreen({ navigation }) {
-    // Add error handling for context
-    let contextData;
-    try {
-        contextData = useAppContext();
-    } catch (error) {
-        console.log('Context error:', error);
-        // Fallback data if context fails
-        contextData = {
-            collection: [],
-            getPlantData: () => [],
-            getPotData: () => [],
-            getPlantImage: () => '🌸',
-            coins: 0
-        };
+const AppContext = createContext();
+
+export const useAppContext = () => {
+    const context = useContext(AppContext);
+    if (!context) {
+        throw new Error('useAppContext must be used within an AppProvider');
     }
+    return context;
+};
 
-    const { collection, getPlantData, getPotData, getPlantImage, coins } = contextData;
-    const plants = getPlantData();
-    const pots = getPotData();
+export const AppProvider = ({ children }) => {
+    const [coins, setCoins] = useState(100);
+    const [collection, setCollection] = useState([]);
+    const [unlockedPots, setUnlockedPots] = useState(['basic']);
+    const [challenges, setChallenges] = useState([
+        {
+            id: 1,
+            title: "Collect 3 different flowers",
+            target: 3,
+            progress: 0,
+            reward: 50,
+            completed: false
+        },
+        {
+            id: 2,
+            title: "Collect 5 flowers",
+            target: 5,
+            progress: 0,
+            reward: 100,
+            completed: false
+        }
+    ]);
 
-    const getShelfItems = () => {
-        const shelves = [[], [], []];
-        collection.forEach((item, index) => {
-            const shelfIndex = Math.floor(index / 3);
-            if (shelfIndex < 3) {
-                shelves[shelfIndex].push(item);
+    // Plant data
+    const getPlantData = () => [
+        {
+            id: 'lily_valley',
+            name: 'Lily of the Valley',
+            rarity: 'uncommon',
+            coins: 25,
+            description: 'A delicate white flower that blooms in spring. Known for its sweet fragrance and bell-shaped flowers.'
+        },
+        {
+            id: 'rose',
+            name: 'Rose',
+            rarity: 'common',
+            coins: 15,
+            description: 'The classic symbol of love and beauty. Roses come in many colors and have been cultivated for thousands of years.'
+        },
+        {
+            id: 'daisy',
+            name: 'Daisy',
+            rarity: 'common',
+            coins: 10,
+            description: 'A cheerful white flower with a yellow center. Daisies are known for their simple beauty and resilience.'
+        },
+        {
+            id: 'sunflower',
+            name: 'Sunflower',
+            rarity: 'rare',
+            coins: 40,
+            description: 'A tall, bright yellow flower that follows the sun. Sunflowers can grow up to 10 feet tall and produce edible seeds.'
+        },
+        {
+            id: 'tulip',
+            name: 'Tulip',
+            rarity: 'uncommon',
+            coins: 20,
+            description: 'An elegant spring flower that comes in many colors. Originally from Turkey, tulips became famous in the Netherlands.'
+        }
+    ];
+
+    // Pot data
+    const getPotData = () => [
+        {
+            id: 'basic',
+            name: 'Basic Clay Pot',
+            price: 0,
+            description: 'A simple clay pot for your plants.'
+        },
+        {
+            id: 'decorative',
+            name: 'Decorative Pot',
+            price: 50,
+            description: 'A beautiful decorated pot with patterns.'
+        },
+        {
+            id: 'ceramic',
+            name: 'Ceramic Pot',
+            price: 75,
+            description: 'A smooth, glazed ceramic pot.'
+        },
+        {
+            id: 'terracotta',
+            name: 'Terracotta Pot',
+            price: 100,
+            description: 'A traditional terracotta pot with excellent drainage.'
+        }
+    ];
+
+    // Get plant image/emoji
+    const getPlantImage = (plantId, potId) => {
+        const plantEmojis = {
+            lily_valley: '🤍',
+            rose: '🌹',
+            daisy: '🌼',
+            sunflower: '🌻',
+            tulip: '🌷'
+        };
+        return plantEmojis[plantId] || '🌸';
+    };
+
+    // Add plant to collection
+    const addPlantToCollection = (plantId) => {
+        const plants = getPlantData();
+        const plant = plants.find(p => p.id === plantId);
+
+        if (!plant) return false;
+
+        // Check if plant already exists in collection
+        const existsInCollection = collection.some(item => item.plantId === plantId);
+        if (existsInCollection) {
+            return false; // Already have this plant
+        }
+
+        // Get a random unlocked pot
+        const availablePots = unlockedPots.length > 0 ? unlockedPots : ['basic'];
+        const randomPot = availablePots[Math.floor(Math.random() * availablePots.length)];
+
+        const newItem = {
+            id: Date.now().toString(),
+            plantId: plantId,
+            potId: randomPot,
+            discoveredAt: new Date().toISOString()
+        };
+
+        setCollection(prev => [...prev, newItem]);
+        setCoins(prev => prev + plant.coins);
+
+        // Update challenge progress
+        setChallenges(prev => prev.map(challenge => {
+            if (!challenge.completed) {
+                const newProgress = challenge.progress + 1;
+                if (newProgress >= challenge.target) {
+                    setCoins(prevCoins => prevCoins + challenge.reward);
+                    return { ...challenge, progress: newProgress, completed: true };
+                }
+                return { ...challenge, progress: newProgress };
             }
-        });
-        return shelves;
+            return challenge;
+        }));
+
+        return true;
     };
 
-    const renderPlantInPot = (item) => {
-        const plant = plants.find(p => p.id === item.plantId);
-        const pot = pots.find(p => p.id === item.potId);
+    // Buy pot
+    const buyPot = (potId) => {
+        const pots = getPotData();
+        const pot = pots.find(p => p.id === potId);
 
-        if (!plant || !pot) return null;
+        if (!pot || unlockedPots.includes(potId) || coins < pot.price) {
+            return false;
+        }
 
-        return (
-            <TouchableOpacity
-                key={item.id}
-                style={styles.plantContainer}
-                onPress={() => navigation.navigate('PlantDetail', { item, plant, pot })}
-            >
-                <View style={styles.potBase}>
-                    <View style={styles.potRim} />
-                    <View style={styles.soil} />
-                    <View style={styles.plant}>
-                        <Text style={styles.plantEmoji}>{getPlantImage(item.plantId, item.potId)}</Text>
-                        <View style={styles.stem} />
-                    </View>
-                </View>
-            </TouchableOpacity>
-        );
+        setCoins(prev => prev - pot.price);
+        setUnlockedPots(prev => [...prev, potId]);
+        return true;
     };
 
-    const renderEmptySpot = (index) => (
-        <View key={`empty-${index}`} style={styles.emptyPot}>
-            <View style={styles.potBase}>
-                <View style={[styles.potRim, styles.emptyPotRim]} />
-                <View style={[styles.soil, styles.emptySoil]} />
-            </View>
-        </View>
-    );
-
-    const renderShelf = (shelfItems, shelfIndex) => (
-        <View key={shelfIndex} style={styles.shelfContainer}>
-            <View style={styles.shelfContent}>
-                {Array.from({ length: 3 }).map((_, spotIndex) => {
-                    const item = shelfItems[spotIndex];
-                    return item ? renderPlantInPot(item) : renderEmptySpot(`${shelfIndex}-${spotIndex}`);
-                })}
-            </View>
-            <View style={styles.shelfBoard} />
-            <View style={styles.shelfSupport} />
-        </View>
-    );
-
-    const shelves = getShelfItems();
+    const contextValue = {
+        coins,
+        collection,
+        unlockedPots,
+        challenges,
+        getPlantData,
+        getPotData,
+        getPlantImage,
+        addPlantToCollection,
+        buyPot
+    };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Text style={styles.backIcon}>✏️</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>Your collection</Text>
-                <View style={styles.coinContainer}>
-                    <Text style={styles.coinText}>🪙 {coins}</Text>
-                </View>
-            </View>
-
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                <View style={styles.content}>
-                    {collection.length === 0 ? (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyTitle}>Your collection is empty</Text>
-                            <Text style={styles.emptySubtitle}>
-                                Start collecting flowers to fill your shelves!
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.collectButton}
-                                onPress={() => navigation.navigate('Camera')}
-                            >
-                                <Text style={styles.collectButtonText}>📷 Collect</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <View style={styles.shelvesContainer}>
-                            {shelves.map((shelfItems, index) => renderShelf(shelfItems, index))}
-                        </View>
-                    )}
-                </View>
-            </ScrollView>
-
-            <View style={styles.bottomActions}>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => navigation.navigate('Camera')}
-                >
-                    <Text style={styles.actionButtonIcon}>📷</Text>
-                    <Text style={styles.actionButtonText}>Collect</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+        <AppContext.Provider value={contextValue}>
+            {children}
+        </AppContext.Provider>
     );
-}
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f8f5f0',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    backIcon: {
-        fontSize: 18,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    coinContainer: {
-        backgroundColor: '#f39c12',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
-    },
-    coinText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    scrollView: {
-        flex: 1,
-    },
-    content: {
-        padding: 20,
-    },
-    emptyState: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 100,
-    },
-    emptyTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#666',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    emptySubtitle: {
-        fontSize: 16,
-        color: '#888',
-        textAlign: 'center',
-        marginBottom: 30,
-    },
-    collectButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 30,
-        paddingVertical: 15,
-        borderRadius: 25,
-    },
-    collectButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    shelvesContainer: {
-        gap: 60,
-    },
-    shelfContainer: {
-        height: 140,
-        position: 'relative',
-    },
-    shelfContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'flex-end',
-        height: 100,
-        paddingHorizontal: 20,
-        zIndex: 2,
-    },
-    shelfBoard: {
-        position: 'absolute',
-        bottom: 20,
-        left: 0,
-        right: 0,
-        height: 12,
-        backgroundColor: '#8B4513',
-        borderRadius: 6,
-        zIndex: 1,
-    },
-    shelfSupport: {
-        position: 'absolute',
-        bottom: 0,
-        left: '50%',
-        marginLeft: -4,
-        width: 8,
-        height: 20,
-        backgroundColor: '#654321',
-        borderRadius: 4,
-    },
-    plantContainer: {
-        alignItems: 'center',
-        zIndex: 3,
-    },
-    emptyPot: {
-        alignItems: 'center',
-        zIndex: 3,
-    },
-    potBase: {
-        position: 'relative',
-        width: 60,
-        height: 70,
-    },
-    potRim: {
-        position: 'absolute',
-        top: 0,
-        left: 5,
-        right: 5,
-        height: 8,
-        backgroundColor: '#8B4513',
-        borderRadius: 25,
-        borderWidth: 1,
-        borderColor: '#654321',
-    },
-    emptyPotRim: {
-        backgroundColor: '#d0d0d0',
-        borderColor: '#b0b0b0',
-    },
-    soil: {
-        position: 'absolute',
-        top: 8,
-        left: 8,
-        right: 8,
-        bottom: 15,
-        backgroundColor: '#8B4513',
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        borderWidth: 1,
-        borderColor: '#654321',
-        borderTopWidth: 0,
-    },
-    emptySoil: {
-        backgroundColor: '#e0e0e0',
-        borderColor: '#c0c0c0',
-    },
-    plant: {
-        position: 'absolute',
-        top: -10,
-        left: '50%',
-        marginLeft: -15,
-        alignItems: 'center',
-    },
-    plantEmoji: {
-        fontSize: 30,
-        zIndex: 4,
-    },
-    stem: {
-        width: 3,
-        height: 20,
-        backgroundColor: '#4a7c4a',
-        marginTop: -5,
-        zIndex: 1,
-    },
-    bottomActions: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
-    },
-    actionButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    actionButtonIcon: {
-        fontSize: 18,
-    },
-    actionButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-});
+};

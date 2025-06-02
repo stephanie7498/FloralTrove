@@ -48,31 +48,16 @@ export default function PlantDetailScreen({ route, navigation }) {
                 <View style={styles.content}>
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
-                            {(() => {
-                                const plantImageData = getPlantImage(item.plantId, item.potId);
-                                if (plantImageData.type === 'image' && plantImageData.require()) {
-                                    return (
-                                        <Image
-                                            source={plantImageData.require()}
-                                            style={styles.plantInPotImage}
-                                            resizeMode="contain"
-                                        />
-                                    );
-                                } else {
-                                    return (
-                                        <View style={styles.potBase}>
-                                            <View style={styles.potRim} />
-                                            <View style={styles.soil} />
-                                            <View style={styles.plant}>
-                                                <Text style={styles.plantEmoji}>
-                                                    {plantImageData.type === 'emoji' ? plantImageData.emoji : '🌸'}
-                                                </Text>
-                                                <View style={styles.stem} />
-                                            </View>
-                                        </View>
-                                    );
-                                }
-                            })()}
+                            <View style={styles.potBase}>
+                                <View style={styles.potRim} />
+                                <View style={styles.soil} />
+                                <View style={styles.plant}>
+                                    <Text style={styles.plantEmoji}>
+                                        {getPlantImage(item.plantId, item.potId)}
+                                    </Text>
+                                    <View style={styles.stem} />
+                                </View>
+                            </View>
                         </View>
                         <Text style={styles.plantName}>{plant.name}</Text>
                         <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>
@@ -134,6 +119,22 @@ export default function PlantDetailScreen({ route, navigation }) {
                                     <Text style={styles.factItem}>• Closes petals at night and in rain</Text>
                                     <Text style={styles.factItem}>• Symbol of innocence and purity</Text>
                                     <Text style={styles.factItem}>• Edible flowers used in salads</Text>
+                                </>
+                            )}
+                            {plant.id === 'sunflower' && (
+                                <>
+                                    <Text style={styles.factItem}>• Can grow up to 10 feet tall</Text>
+                                    <Text style={styles.factItem}>• Flowers follow the sun throughout the day</Text>
+                                    <Text style={styles.factItem}>• Seeds are a healthy snack rich in vitamin E</Text>
+                                    <Text style={styles.factItem}>• Native to North and Central America</Text>
+                                </>
+                            )}
+                            {plant.id === 'tulip' && (
+                                <>
+                                    <Text style={styles.factItem}>• Originally from Central Asia</Text>
+                                    <Text style={styles.factItem}>• Became famous during Dutch Tulip Mania</Text>
+                                    <Text style={styles.factItem}>• Bloom for only 3-7 days each year</Text>
+                                    <Text style={styles.factItem}>• Come in almost every color except true blue</Text>
                                 </>
                             )}
                         </View>
