@@ -57,7 +57,7 @@ export default function ShopScreen({ navigation }) {
         return (
             <View key={pot.id} style={styles.potItem}>
                 <View style={styles.potDisplay}>
-                    <View style={styles.potImageContainer}>
+                    <View style={[styles.potImageContainer, { backgroundColor: getPotColor(pot.id) }]}>
                         <Text style={styles.potEmoji}>🪴</Text>
                     </View>
                 </View>
@@ -95,6 +95,18 @@ export default function ShopScreen({ navigation }) {
         );
     };
 
+    const getPotColor = (potId) => {
+        const colors = {
+            basic: '#D2691E',
+            decorative: '#CD853F',
+            ceramic: '#F5DEB3',
+            terracotta: '#D2691E',
+            premium: '#DAA520',
+            deluxe: '#B8860B'
+        };
+        return colors[potId] || '#E0E0E0';
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <ImageBackground
@@ -111,10 +123,13 @@ export default function ShopScreen({ navigation }) {
                             <Text style={styles.backText}>←</Text>
                         </TouchableOpacity>
                         <Text style={styles.title}>Buy new pots!</Text>
-                        <View style={styles.coinContainer}>
+                        <TouchableOpacity
+                            style={styles.coinContainer}
+                            onPress={() => navigation.navigate('Challenges')}
+                        >
                             <Text style={styles.coinIcon}>🪙</Text>
                             <Text style={styles.coinText}>{coins}</Text>
-                        </View>
+                        </TouchableOpacity>
                     </View>
 
                     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -128,7 +143,7 @@ export default function ShopScreen({ navigation }) {
                     <View style={styles.bottomActions}>
                         <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={() => navigation.navigate('Collection')}
+                            onPress={() => navigation.goBack()}
                         >
                             <Text style={styles.actionButtonText}>Back</Text>
                         </TouchableOpacity>
@@ -148,52 +163,66 @@ const styles = StyleSheet.create({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomColor: '#E8E8E8',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        backgroundColor: '#F0F0F0',
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
     },
     backText: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#333',
     },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#2E7D32',
         flex: 1,
         textAlign: 'center',
         marginHorizontal: 20,
+        letterSpacing: 0.5,
     },
     coinContainer: {
-        backgroundColor: '#f39c12',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     coinIcon: {
-        fontSize: 14,
+        fontSize: 16,
+        marginRight: 5,
     },
     coinText: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -201,66 +230,79 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: 20,
+        padding: 25,
     },
     potsGrid: {
-        gap: 15,
+        gap: 20,
     },
     potItem: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: 20,
-        borderRadius: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+        padding: 25,
+        borderRadius: 20,
         flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     potDisplay: {
-        marginRight: 15,
+        marginRight: 20,
     },
     potImageContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#f0f0f0',
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#8B4513',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
     potEmoji: {
-        fontSize: 30,
+        fontSize: 32,
     },
     potInfo: {
         flex: 1,
     },
     potName: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
+        color: '#2E7D32',
+        marginBottom: 8,
+        letterSpacing: 0.3,
     },
     priceContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
     },
     potPrice: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#f39c12',
+        color: '#FFA500',
     },
     buyButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 15,
-        minWidth: 60,
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 25,
+        paddingVertical: 12,
+        borderRadius: 20,
+        minWidth: 80,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
     buyButtonDisabled: {
-        backgroundColor: '#ccc',
+        backgroundColor: '#CCCCCC',
     },
     buyButtonText: {
         color: '#fff',
@@ -271,35 +313,50 @@ const styles = StyleSheet.create({
         color: '#999',
     },
     ownedBadge: {
-        backgroundColor: '#27ae60',
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        backgroundColor: '#4CAF50',
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
     ownedText: {
         color: '#fff',
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
     },
     bottomActions: {
         flexDirection: 'row',
         justifyContent: 'center',
-        padding: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        padding: 25,
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
+        borderTopColor: '#E8E8E8',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     actionButton: {
-        backgroundColor: '#888',
-        paddingHorizontal: 40,
-        paddingVertical: 12,
-        borderRadius: 20,
+        backgroundColor: '#757575',
+        paddingHorizontal: 45,
+        paddingVertical: 15,
+        borderRadius: 25,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     actionButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
     },
 });

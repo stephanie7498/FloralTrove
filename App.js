@@ -5,6 +5,7 @@ import React from 'react';
 
 import { AppProvider } from './context/AppContext';
 import CameraScreen from './screens/CameraScreen';
+import ChallengesScreen from './screens/ChallengesScreen';
 import CollectionScreen from './screens/CollectionScreen';
 import HomeScreen from './screens/HomeScreen';
 import PlantDetailScreen from './screens/PlantDetailScreen';
@@ -39,6 +40,14 @@ export default function App() {
                         component={CollectionScreen}
                         options={{
                             title: 'Your Collection',
+                            headerShown: false
+                        }}
+                    />
+                    <Stack.Screen
+                        name="Challenges"
+                        component={ChallengesScreen}
+                        options={{
+                            title: 'Challenges',
                             headerShown: false
                         }}
                     />

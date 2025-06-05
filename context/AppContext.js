@@ -11,13 +11,13 @@ export const useAppContext = () => {
 };
 
 export const AppProvider = ({ children }) => {
-    const [coins, setCoins] = useState(100);
+    const [coins, setCoins] = useState(500);
     const [collection, setCollection] = useState([]);
     const [unlockedPots, setUnlockedPots] = useState(['basic']);
     const [challenges, setChallenges] = useState([
         {
             id: 1,
-            title: "Collect 3 different flowers",
+            title: "Identify 3 flowers",
             target: 3,
             progress: 0,
             reward: 50,
@@ -25,7 +25,7 @@ export const AppProvider = ({ children }) => {
         },
         {
             id: 2,
-            title: "Collect 5 flowers",
+            title: "Collect 5 different flowers",
             target: 5,
             progress: 0,
             reward: 100,
@@ -83,20 +83,32 @@ export const AppProvider = ({ children }) => {
         {
             id: 'decorative',
             name: 'Decorative Pot',
-            price: 50,
+            price: 200,
             description: 'A beautiful decorated pot with patterns.'
         },
         {
             id: 'ceramic',
             name: 'Ceramic Pot',
-            price: 75,
+            price: 500,
             description: 'A smooth, glazed ceramic pot.'
         },
         {
             id: 'terracotta',
             name: 'Terracotta Pot',
-            price: 100,
+            price: 700,
             description: 'A traditional terracotta pot with excellent drainage.'
+        },
+        {
+            id: 'premium',
+            name: 'Premium Gold Pot',
+            price: 1500,
+            description: 'An elegant gold-plated pot for special plants.'
+        },
+        {
+            id: 'deluxe',
+            name: 'Deluxe Crystal Pot',
+            price: 2000,
+            description: 'A luxurious crystal pot that sparkles in the light.'
         }
     ];
 

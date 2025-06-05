@@ -24,29 +24,36 @@ export default function HomeScreen({ navigation }) {
             >
                 <View style={styles.overlay}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Flora{'\n'}Trove</Text>
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.title}>Flora</Text>
+                            <Text style={styles.title}>Trove</Text>
+                        </View>
                         <View style={styles.coinContainer}>
-                            <Text style={styles.coinText}>🪙 {coins}</Text>
+                            <Text style={styles.coinIcon}>🪙</Text>
+                            <Text style={styles.coinText}>{coins}</Text>
                         </View>
                     </View>
 
                     <View style={styles.content}>
                         {activeChallenge && (
                             <View style={styles.challengeCard}>
-                                <Text style={styles.challengeTitle}>Challenge</Text>
-                                <Text style={styles.challengeDescription}>{activeChallenge.title}</Text>
+                                <Text style={styles.challengeLabel}>Challenge</Text>
+                                <Text style={styles.challengeTitle}>{activeChallenge.title}</Text>
                                 <View style={styles.progressContainer}>
                                     <Text style={styles.progressText}>
                                         {activeChallenge.progress}/{activeChallenge.target}
                                     </Text>
-                                    <Text style={styles.rewardText}>🪙 {activeChallenge.reward}</Text>
+                                    <View style={styles.rewardContainer}>
+                                        <Text style={styles.coinIcon}>🪙</Text>
+                                        <Text style={styles.rewardText}>{activeChallenge.reward}</Text>
+                                    </View>
                                 </View>
                             </View>
                         )}
 
                         <TouchableOpacity
                             style={styles.collectButton}
-                            onPress={() => navigation.navigate('Collection')}
+                            onPress={() => navigation.navigate('Camera')}
                         >
                             <Text style={styles.collectButtonText}>Collect now</Text>
                         </TouchableOpacity>
@@ -87,31 +94,47 @@ const styles = StyleSheet.create({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
         padding: 20,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginTop: 20,
+        marginTop: 40,
+        marginBottom: 40,
+    },
+    titleContainer: {
+        alignItems: 'flex-start',
     },
     title: {
-        fontSize: 36,
+        fontSize: 42,
         fontWeight: 'bold',
-        color: '#fff',
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 2, height: 2 },
-        textShadowRadius: 4,
-        lineHeight: 40,
+        color: '#4A90E2',
+        textShadowColor: 'rgba(255, 255, 255, 0.8)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+        lineHeight: 45,
+        letterSpacing: 1,
     },
     coinContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
         flexDirection: 'row',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    coinIcon: {
+        fontSize: 16,
+        marginRight: 5,
     },
     coinText: {
         fontSize: 16,
@@ -124,71 +147,99 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     challengeCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: 20,
-        borderRadius: 15,
-        marginBottom: 40,
-        width: '90%',
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+        padding: 24,
+        borderRadius: 20,
+        marginBottom: 50,
+        width: '85%',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    challengeLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#4A90E2',
+        marginBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     challengeTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#4a7c4a',
-        marginBottom: 8,
-    },
-    challengeDescription: {
-        fontSize: 16,
         color: '#333',
         textAlign: 'center',
-        marginBottom: 15,
+        marginBottom: 20,
+        fontWeight: '500',
     },
     progressContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 20,
+        justifyContent: 'space-between',
+        width: '100%',
     },
     progressText: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#4a7c4a',
+        color: '#4A90E2',
+    },
+    rewardContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
     },
     rewardText: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#f39c12',
+        color: '#fff',
     },
     collectButton: {
-        backgroundColor: 'rgba(74, 124, 74, 0.9)',
-        paddingHorizontal: 40,
-        paddingVertical: 15,
-        borderRadius: 25,
+        backgroundColor: 'rgba(76, 175, 80, 0.95)',
+        paddingHorizontal: 45,
+        paddingVertical: 18,
+        borderRadius: 30,
         borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.8)',
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     collectButtonText: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
+        letterSpacing: 0.5,
     },
     bottomNav: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 40,
-        marginBottom: 20,
+        gap: 50,
+        marginBottom: 30,
+        marginTop: 50,
     },
     navButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        padding: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        padding: 18,
         borderRadius: 50,
-        width: 60,
-        height: 60,
+        width: 70,
+        height: 70,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     navIcon: {
-        fontSize: 24,
+        fontSize: 28,
     },
 });

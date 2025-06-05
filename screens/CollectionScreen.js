@@ -10,23 +10,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 
 export default function CollectionScreen({ navigation }) {
-    // Add error handling for context
-    let contextData;
-    try {
-        contextData = useAppContext();
-    } catch (error) {
-        console.log('Context error:', error);
-        // Fallback data if context fails
-        contextData = {
-            collection: [],
-            getPlantData: () => [],
-            getPotData: () => [],
-            getPlantImage: () => '🌸',
-            coins: 0
-        };
-    }
-
-    const { collection, getPlantData, getPotData, getPlantImage, coins } = contextData;
+    const { collection, getPlantData, getPotData, getPlantImage, coins } = useAppContext();
     const plants = getPlantData();
     const pots = getPotData();
 
@@ -54,8 +38,8 @@ export default function CollectionScreen({ navigation }) {
                 onPress={() => navigation.navigate('PlantDetail', { item, plant, pot })}
             >
                 <View style={styles.potBase}>
-                    <View style={styles.potRim} />
-                    <View style={styles.soil} />
+                    <View style={[styles.potRim, pot.id === 'basic' ? styles.basicPot : styles.decorativePot]} />
+                    <View style={[styles.soil, pot.id === 'basic' ? styles.basicSoil : styles.decorativeSoil]} />
                     <View style={styles.plant}>
                         <Text style={styles.plantEmoji}>{getPlantImage(item.plantId, item.potId)}</Text>
                         <View style={styles.stem} />
@@ -83,7 +67,8 @@ export default function CollectionScreen({ navigation }) {
                 })}
             </View>
             <View style={styles.shelfBoard} />
-            <View style={styles.shelfSupport} />
+            <View style={styles.shelfSupportLeft} />
+            <View style={styles.shelfSupportRight} />
         </View>
     );
 
@@ -96,12 +81,25 @@ export default function CollectionScreen({ navigation }) {
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Text style={styles.backIcon}>✏️</Text>
+                    <Text style={styles.backIcon}>←</Text>
                 </TouchableOpacity>
                 <Text style={styles.title}>Your collection</Text>
-                <View style={styles.coinContainer}>
-                    <Text style={styles.coinText}>🪙 {coins}</Text>
-                </View>
+                <TouchableOpacity
+                    style={styles.challengesButton}
+                    onPress={() => navigation.navigate('Challenges')}
+                >
+                    <Text style={styles.challengesIcon}>✓</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.subHeader}>
+                <TouchableOpacity
+                    style={styles.coinContainer}
+                    onPress={() => navigation.navigate('Shop')}
+                >
+                    <Text style={styles.coinIcon}>🪙</Text>
+                    <Text style={styles.coinText}>{coins}</Text>
+                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -116,7 +114,8 @@ export default function CollectionScreen({ navigation }) {
                                 style={styles.collectButton}
                                 onPress={() => navigation.navigate('Camera')}
                             >
-                                <Text style={styles.collectButtonText}>📷 Collect</Text>
+                                <Text style={styles.collectButtonIcon}>📷</Text>
+                                <Text style={styles.collectButtonText}>Collect</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -143,41 +142,69 @@ export default function CollectionScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f5f0',
+        backgroundColor: '#F5F3F0',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomColor: '#E8E8E8',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        backgroundColor: '#F0F0F0',
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
     },
     backIcon: {
-        fontSize: 18,
+        fontSize: 20,
     },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#2E7D32',
+        letterSpacing: 0.5,
+    },
+    subHeader: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E8E8E8',
+        alignItems: 'flex-end',
     },
     coinContainer: {
-        backgroundColor: '#f39c12',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    coinIcon: {
+        fontSize: 16,
+        marginRight: 5,
     },
     coinText: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -185,72 +212,110 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: 20,
+        padding: 25,
+        paddingTop: 40,
     },
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 100,
+        marginTop: 120,
     },
     emptyTitle: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
         color: '#666',
-        marginBottom: 10,
+        marginBottom: 15,
         textAlign: 'center',
     },
     emptySubtitle: {
-        fontSize: 16,
+        fontSize: 18,
         color: '#888',
         textAlign: 'center',
-        marginBottom: 30,
+        marginBottom: 40,
+        lineHeight: 24,
     },
     collectButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 30,
-        paddingVertical: 15,
-        borderRadius: 25,
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 35,
+        paddingVertical: 18,
+        borderRadius: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    collectButtonIcon: {
+        fontSize: 20,
+        marginRight: 10,
     },
     collectButtonText: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
     },
     shelvesContainer: {
-        gap: 60,
+        gap: 80,
     },
     shelfContainer: {
-        height: 140,
+        height: 160,
         position: 'relative',
     },
     shelfContent: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'flex-end',
-        height: 100,
-        paddingHorizontal: 20,
+        height: 120,
+        paddingHorizontal: 30,
         zIndex: 2,
     },
     shelfBoard: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 25,
         left: 0,
         right: 0,
-        height: 12,
+        height: 18,
         backgroundColor: '#8B4513',
-        borderRadius: 6,
+        borderRadius: 9,
         zIndex: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 4,
+        borderTopWidth: 2,
+        borderTopColor: '#A0522D',
+        borderBottomWidth: 2,
+        borderBottomColor: '#654321',
     },
-    shelfSupport: {
+    shelfSupportLeft: {
         position: 'absolute',
         bottom: 0,
-        left: '50%',
-        marginLeft: -4,
-        width: 8,
-        height: 20,
+        left: '15%',
+        width: 12,
+        height: 25,
         backgroundColor: '#654321',
-        borderRadius: 4,
+        borderRadius: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    shelfSupportRight: {
+        position: 'absolute',
+        bottom: 0,
+        right: '15%',
+        width: 12,
+        height: 25,
+        backgroundColor: '#654321',
+        borderRadius: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: -2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
     },
     plantContainer: {
         alignItems: 'center',
@@ -262,82 +327,108 @@ const styles = StyleSheet.create({
     },
     potBase: {
         position: 'relative',
-        width: 60,
-        height: 70,
+        width: 70,
+        height: 80,
     },
     potRim: {
         position: 'absolute',
         top: 0,
-        left: 5,
-        right: 5,
-        height: 8,
-        backgroundColor: '#8B4513',
+        left: 8,
+        right: 8,
+        height: 12,
         borderRadius: 25,
-        borderWidth: 1,
-        borderColor: '#654321',
+        borderWidth: 2,
+    },
+    basicPot: {
+        backgroundColor: '#D2691E',
+        borderColor: '#8B4513',
+    },
+    decorativePot: {
+        backgroundColor: '#CD853F',
+        borderColor: '#A0522D',
     },
     emptyPotRim: {
-        backgroundColor: '#d0d0d0',
-        borderColor: '#b0b0b0',
+        backgroundColor: '#E0E0E0',
+        borderColor: '#BDBDBD',
     },
     soil: {
         position: 'absolute',
-        top: 8,
-        left: 8,
-        right: 8,
-        bottom: 15,
-        backgroundColor: '#8B4513',
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        borderWidth: 1,
-        borderColor: '#654321',
+        top: 12,
+        left: 10,
+        right: 10,
+        bottom: 18,
+        borderBottomLeftRadius: 25,
+        borderBottomRightRadius: 25,
+        borderWidth: 2,
         borderTopWidth: 0,
     },
+    basicSoil: {
+        backgroundColor: '#8B4513',
+        borderColor: '#654321',
+    },
+    decorativeSoil: {
+        backgroundColor: '#A0522D',
+        borderColor: '#8B4513',
+    },
     emptySoil: {
-        backgroundColor: '#e0e0e0',
-        borderColor: '#c0c0c0',
+        backgroundColor: '#F0F0F0',
+        borderColor: '#D0D0D0',
     },
     plant: {
         position: 'absolute',
-        top: -10,
+        top: -15,
         left: '50%',
-        marginLeft: -15,
+        marginLeft: -20,
         alignItems: 'center',
     },
     plantEmoji: {
-        fontSize: 30,
+        fontSize: 35,
         zIndex: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     stem: {
-        width: 3,
-        height: 20,
-        backgroundColor: '#4a7c4a',
-        marginTop: -5,
+        width: 4,
+        height: 25,
+        backgroundColor: '#4CAF50',
+        marginTop: -8,
         zIndex: 1,
+        borderRadius: 2,
     },
     bottomActions: {
         flexDirection: 'row',
         justifyContent: 'center',
-        padding: 20,
+        padding: 25,
         backgroundColor: '#fff',
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
+        borderTopColor: '#E8E8E8',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     actionButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
-        borderRadius: 20,
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 35,
+        paddingVertical: 15,
+        borderRadius: 25,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     actionButtonIcon: {
-        fontSize: 18,
+        fontSize: 20,
+        marginRight: 10,
     },
     actionButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
     },
 });

@@ -11,7 +11,7 @@ import { useAppContext } from '../context/AppContext';
 
 export default function PlantDetailScreen({ route, navigation }) {
     const { item, plant, pot } = route.params;
-    const { getPlantImage } = useAppContext();
+    const { getPlantImage, coins } = useAppContext();
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -41,7 +41,12 @@ export default function PlantDetailScreen({ route, navigation }) {
                     <Text style={styles.backText}>←</Text>
                 </TouchableOpacity>
                 <Text style={styles.title}>Plant Details</Text>
-                <View style={styles.headerSpacer} />
+                <TouchableOpacity
+                    style={styles.coinButton}
+                    onPress={() => navigation.navigate('Shop')}
+                >
+                    <Text style={styles.coinIcon}>🪙</Text>
+                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -192,8 +197,22 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
-    headerSpacer: {
+    coinButton: {
         width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFA500',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    coinIcon: {
+        fontSize: 18,
+        color: '#fff',
     },
     scrollView: {
         flex: 1,
