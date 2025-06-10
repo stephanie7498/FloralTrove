@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     ImageBackground,
     Modal,
     SafeAreaView,
@@ -15,6 +16,7 @@ export default function CameraScreen({ navigation }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [showFoundModal, setShowFoundModal] = useState(false);
     const [foundPlant, setFoundPlant] = useState(null);
+    const [foundPotId, setFoundPotId] = useState('basic');
     const [showInstructions, setShowInstructions] = useState(false);
     const [recognitionFailed, setRecognitionFailed] = useState(false);
 
@@ -37,6 +39,7 @@ export default function CameraScreen({ navigation }) {
 
                 if (wasAdded) {
                     setFoundPlant(randomPlant);
+                    setFoundPotId('basic'); // Default pot for display
                     setShowFoundModal(true);
                 } else {
                     setRecognitionFailed(true);
@@ -50,6 +53,7 @@ export default function CameraScreen({ navigation }) {
     const closeFoundModal = () => {
         setShowFoundModal(false);
         setFoundPlant(null);
+        setFoundPotId('basic');
     };
 
     return (
@@ -108,7 +112,7 @@ export default function CameraScreen({ navigation }) {
 
                         {recognitionFailed && (
                             <View style={styles.failureContainer}>
-                                <Text style={styles.failureTitle}>Can't recognize flower.</Text>
+                                <Text style={styles.failureTitle}>Cannot recognize flower.</Text>
                                 <TouchableOpacity
                                     style={styles.tryAgainButton}
                                     onPress={() => setRecognitionFailed(false)}
@@ -147,10 +151,15 @@ export default function CameraScreen({ navigation }) {
                         </Text>
                         <View style={styles.modalPlant}>
                             {foundPlant && (
-                                <Text style={styles.modalPlantEmoji}>
-                                    {getPlantImage(foundPlant.id, 'basic')}
-                                </Text>
+                                <Image
+                                    source={getPlantImage(foundPlant.id, foundPotId)}
+                                    style={styles.modalPlantImage}
+                                    resizeMode="contain"
+                                />
                             )}
+                        </View>
+                        <View style={styles.coinReward}>
+                            <Text style={styles.coinRewardText}>+{foundPlant?.coins} coins! 🪙</Text>
                         </View>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
@@ -443,13 +452,26 @@ const styles = StyleSheet.create({
         lineHeight: 28,
     },
     modalPlant: {
-        marginBottom: 30,
+        marginBottom: 20,
         backgroundColor: '#F8F8F8',
-        borderRadius: 50,
-        padding: 20,
+        borderRadius: 20,
+        padding: 15,
     },
-    modalPlantEmoji: {
-        fontSize: 70,
+    modalPlantImage: {
+        width: 100,
+        height: 120,
+    },
+    coinReward: {
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 15,
+        marginBottom: 25,
+    },
+    coinRewardText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     modalButtons: {
         gap: 15,

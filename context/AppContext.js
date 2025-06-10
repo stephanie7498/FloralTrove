@@ -1,201 +1,255 @@
-import React, { createContext, useContext, useState } from 'react';
+import React from 'react';
+import {
+    Alert,
+    Image,
+    ImageBackground,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { useAppContext } from '../context/AppContext';
 
-const AppContext = createContext();
-
-export const useAppContext = () => {
-    const context = useContext(AppContext);
-    if (!context) {
-        throw new Error('useAppContext must be used within an AppProvider');
-    }
-    return context;
-};
-
-export const AppProvider = ({ children }) => {
-    const [coins, setCoins] = useState(500);
-    const [collection, setCollection] = useState([]);
-    const [unlockedPots, setUnlockedPots] = useState(['basic']);
-    const [challenges, setChallenges] = useState([
-        {
-            id: 1,
-            title: "Identify 3 flowers",
-            target: 3,
-            progress: 0,
-            reward: 50,
-            completed: false
-        },
-        {
-            id: 2,
-            title: "Collect 5 different flowers",
-            target: 5,
-            progress: 0,
-            reward: 100,
-            completed: false
-        }
-    ]);
-
-    // Plant data
-    const getPlantData = () => [
-        {
-            id: 'lily_valley',
-            name: 'Lily of the Valley',
-            rarity: 'uncommon',
-            coins: 25,
-            description: 'A delicate white flower that blooms in spring. Known for its sweet fragrance and bell-shaped flowers.'
-        },
-        {
-            id: 'rose',
-            name: 'Rose',
-            rarity: 'common',
-            coins: 15,
-            description: 'The classic symbol of love and beauty. Roses come in many colors and have been cultivated for thousands of years.'
-        },
-        {
-            id: 'daisy',
-            name: 'Daisy',
-            rarity: 'common',
-            coins: 10,
-            description: 'A cheerful white flower with a yellow center. Daisies are known for their simple beauty and resilience.'
-        },
-        {
-            id: 'sunflower',
-            name: 'Sunflower',
-            rarity: 'rare',
-            coins: 40,
-            description: 'A tall, bright yellow flower that follows the sun. Sunflowers can grow up to 10 feet tall and produce edible seeds.'
-        },
-        {
-            id: 'tulip',
-            name: 'Tulip',
-            rarity: 'uncommon',
-            coins: 20,
-            description: 'An elegant spring flower that comes in many colors. Originally from Turkey, tulips became famous in the Netherlands.'
-        }
-    ];
-
-    // Pot data
-    const getPotData = () => [
-        {
-            id: 'basic',
-            name: 'Basic Clay Pot',
-            price: 0,
-            description: 'A simple clay pot for your plants.'
-        },
-        {
-            id: 'decorative',
-            name: 'Decorative Pot',
-            price: 200,
-            description: 'A beautiful decorated pot with patterns.'
-        },
-        {
-            id: 'ceramic',
-            name: 'Ceramic Pot',
-            price: 500,
-            description: 'A smooth, glazed ceramic pot.'
-        },
-        {
-            id: 'terracotta',
-            name: 'Terracotta Pot',
-            price: 700,
-            description: 'A traditional terracotta pot with excellent drainage.'
-        },
-        {
-            id: 'premium',
-            name: 'Premium Gold Pot',
-            price: 1500,
-            description: 'An elegant gold-plated pot for special plants.'
-        },
-        {
-            id: 'deluxe',
-            name: 'Deluxe Crystal Pot',
-            price: 2000,
-            description: 'A luxurious crystal pot that sparkles in the light.'
-        }
-    ];
-
-    // Get plant image/emoji
-    const getPlantImage = (plantId, potId) => {
-        const plantEmojis = {
-            lily_valley: '🤍',
-            rose: '🌹',
-            daisy: '🌼',
-            sunflower: '🌻',
-            tulip: '🌷'
-        };
-        return plantEmojis[plantId] || '🌸';
-    };
-
-    // Add plant to collection
-    const addPlantToCollection = (plantId) => {
-        const plants = getPlantData();
-        const plant = plants.find(p => p.id === plantId);
-
-        if (!plant) return false;
-
-        // Check if plant already exists in collection
-        const existsInCollection = collection.some(item => item.plantId === plantId);
-        if (existsInCollection) {
-            return false; // Already have this plant
-        }
-
-        // Get a random unlocked pot
-        const availablePots = unlockedPots.length > 0 ? unlockedPots : ['basic'];
-        const randomPot = availablePots[Math.floor(Math.random() * availablePots.length)];
-
-        const newItem = {
-            id: Date.now().toString(),
-            plantId: plantId,
-            potId: randomPot,
-            discoveredAt: new Date().toISOString()
-        };
-
-        setCollection(prev => [...prev, newItem]);
-        setCoins(prev => prev + plant.coins);
-
-        // Update challenge progress
-        setChallenges(prev => prev.map(challenge => {
-            if (!challenge.completed) {
-                const newProgress = challenge.progress + 1;
-                if (newProgress >= challenge.target) {
-                    setCoins(prevCoins => prevCoins + challenge.reward);
-                    return { ...challenge, progress: newProgress, completed: true };
-                }
-                return { ...challenge, progress: newProgress };
-            }
-            return challenge;
-        }));
-
-        return true;
-    };
-
-    // Buy pot
-    const buyPot = (potId) => {
-        const pots = getPotData();
-        const pot = pots.find(p => p.id === potId);
-
-        if (!pot || unlockedPots.includes(potId) || coins < pot.price) {
-            return false;
-        }
-
-        setCoins(prev => prev - pot.price);
-        setUnlockedPots(prev => [...prev, potId]);
-        return true;
-    };
-
-    const contextValue = {
+export default function ShopScreen({ navigation }) {
+    const {
         coins,
-        collection,
         unlockedPots,
-        challenges,
-        getPlantData,
+        activePotType,
+        buyPot,
         getPotData,
-        getPlantImage,
-        addPlantToCollection,
-        buyPot
+        getPotImage,
+        setActivePot,
+        changeAllPots
+    } = useAppContext();
+
+    const pots = getPotData();
+
+    const handleBuyPot = (pot) => {
+        // Debug info
+        console.log('=== DEBUG INFO ===');
+        console.log('Pot being purchased:', pot);
+        console.log('User coins:', coins);
+        console.log('Pot price:', pot.price);
+        console.log('Unlocked pots:', unlockedPots);
+        console.log('Is pot already owned?', unlockedPots.includes(pot.id));
+        console.log('Can afford?', coins >= pot.price);
+
+        if (unlockedPots.includes(pot.id)) {
+            Alert.alert("Already Owned", "You already own this pot!");
+            return;
+        }
+
+        if (coins < pot.price) {
+            Alert.alert(
+                "Not Enough Coins",
+                `You need ${pot.price} coins but you only have ${coins} coins.`
+            );
+            return;
+        }
+
+        // Direct purchase for testing
+        const success = buyPot(pot.id);
+        console.log('Purchase success:', success);
+
+        if (success) {
+            Alert.alert("Success!", `You bought the ${pot.name}!`);
+        } else {
+            Alert.alert("Failed", "Purchase failed for unknown reason.");
+        }
+    };
+
+    const handleUsePot = (potId) => {
+        Alert.alert(
+            "Use This Pot",
+            "What would you like to do?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Use for New Plants",
+                    onPress: () => {
+                        setActivePot(potId);
+                        Alert.alert("Success!", "New plants will now appear in this pot type.");
+                    }
+                },
+                {
+                    text: "Change All Plants",
+                    onPress: () => {
+                        changeAllPots(potId);
+                        Alert.alert("Success!", "All your plants are now in this pot type!");
+                    }
+                }
+            ]
+        );
     };
 
     return (
-        <AppContext.Provider value={contextValue}>
-            {children}
-        </AppContext.Provider>
+        <SafeAreaView style={styles.container}>
+            <ImageBackground
+                source={require('../assets/images/backgrounds/background_shop.png')}
+                style={styles.background}
+                resizeMode="cover"
+            >
+                <View style={styles.overlay}>
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backText}>←</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.title}>Buy new pots!</Text>
+                        <View style={styles.coinContainer}>
+                            <Text style={styles.coinIcon}>🪙</Text>
+                            <Text style={styles.coinText}>{coins}</Text>
+                        </View>
+                    </View>
+
+                    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                        <View style={styles.content}>
+                            <Text style={styles.subtitle}>Debug Info:</Text>
+                            <Text style={styles.debugText}>Coins: {coins}</Text>
+                            <Text style={styles.debugText}>Unlocked: {unlockedPots.join(', ')}</Text>
+                            <Text style={styles.debugText}>Active: {activePotType}</Text>
+
+                            <View style={styles.potsGrid}>
+                                {pots.map((pot) => {
+                                    const isOwned = unlockedPots.includes(pot.id);
+                                    const canAfford = coins >= pot.price;
+                                    const isActive = activePotType === pot.id;
+
+                                    return (
+                                        <View key={pot.id} style={styles.potItem}>
+                                            <Image
+                                                source={getPotImage(pot.id)}
+                                                style={styles.potImage}
+                                                resizeMode="contain"
+                                            />
+
+                                            <View style={styles.potInfo}>
+                                                <Text style={styles.potName}>{pot.name}</Text>
+                                                <Text style={styles.potPrice}>
+                                                    {pot.price === 0 ? 'FREE' : `${pot.price} coins`}
+                                                </Text>
+                                                <Text style={styles.debugText}>
+                                                    Owned: {isOwned ? 'Yes' : 'No'}
+                                                </Text>
+                                                <Text style={styles.debugText}>
+                                                    Can afford: {canAfford ? 'Yes' : 'No'}
+                                                </Text>
+                                                {isActive && <Text style={styles.activeText}>ACTIVE</Text>}
+                                            </View>
+
+                                            {isOwned ? (
+                                                <TouchableOpacity
+                                                    style={styles.useButton}
+                                                    onPress={() => handleUsePot(pot.id)}
+                                                >
+                                                    <Text style={styles.buttonText}>Use</Text>
+                                                </TouchableOpacity>
+                                            ) : (
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.buyButton,
+                                                        !canAfford && styles.disabledButton
+                                                    ]}
+                                                    onPress={() => handleBuyPot(pot)}
+                                                    disabled={!canAfford}
+                                                >
+                                                    <Text style={styles.buttonText}>
+                                                        {pot.price === 0 ? 'Get' : 'Buy'}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Text style={styles.buttonText}>Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </ImageBackground>
+        </SafeAreaView>
     );
-};
+}
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    background: { flex: 1 },
+    overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.1)' },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    },
+    backButton: {
+        backgroundColor: '#f0f0f0',
+        padding: 10,
+        borderRadius: 20,
+    },
+    backText: { fontSize: 20, fontWeight: 'bold' },
+    title: { fontSize: 20, fontWeight: 'bold', color: '#2E7D32' },
+    coinContainer: {
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    coinIcon: { fontSize: 16, marginRight: 5 },
+    coinText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+    scrollView: { flex: 1 },
+    content: { padding: 20 },
+    subtitle: {
+        fontSize: 18,
+        color: '#fff',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    debugText: {
+        fontSize: 14,
+        color: '#fff',
+        textAlign: 'center',
+        marginBottom: 5,
+    },
+    potsGrid: { marginTop: 20 },
+    potItem: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: 20,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    potImage: { width: 60, height: 60, marginRight: 15 },
+    potInfo: { flex: 1 },
+    potName: { fontSize: 18, fontWeight: 'bold', color: '#2E7D32' },
+    potPrice: { fontSize: 16, color: '#FFA500', fontWeight: 'bold' },
+    activeText: { fontSize: 12, color: '#4CAF50', fontWeight: 'bold' },
+    buyButton: {
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 15,
+    },
+    useButton: {
+        backgroundColor: '#2196F3',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 15,
+    },
+    disabledButton: { backgroundColor: '#ccc' },
+    buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+});

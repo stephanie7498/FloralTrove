@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
     SafeAreaView,
     ScrollView,
@@ -7,19 +7,48 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useAppContext } from '../context/AppContext';
+import { useAppSelectors, useAppState } from '../context/AppContext';
 
 export default function ChallengesScreen({ navigation }) {
-    const { coins, challenges } = useAppContext();
+    // Optimized context usage - only state that's needed
+    const { coins, challenges } = useAppState();
 
-    const renderChallenge = (challenge) => {
-        const progressPercentage = (challenge.progress / challenge.target) * 100;
+    // Use selectors for computed values
+    const { activeChallenges, completedChallenges: completedCount } = useAppSelectors();
+
+    // Memoized calculations
+    const challengeStats = useMemo(() => {
+        const total = challenges.length;
+        const completed = challenges.filter(c => c.completed).length;
+        const totalReward = challenges
+            .filter(c => c.completed)
+            .reduce((sum, c) => sum + c.reward, 0);
+
+        return { total, completed, totalReward };
+    }, [challenges]);
+
+    // Memoized navigation functions
+    const navigateBack = useCallback(() => {
+        navigation.goBack();
+    }, [navigation]);
+
+    const navigateToShop = useCallback(() => {
+        navigation.navigate('Shop');
+    }, [navigation]);
+
+    const navigateToCamera = useCallback(() => {
+        navigation.navigate('Camera');
+    }, [navigation]);
+
+    const renderChallenge = useCallback((challenge) => {
+        const progressPercentage = Math.min((challenge.progress / challenge.target) * 100, 100);
+        const isCompleted = challenge.completed;
 
         return (
             <View key={challenge.id} style={styles.challengeCard}>
                 <View style={styles.challengeHeader}>
-                    <Text style={styles.challengeLabel}>Challenge</Text>
-                    {challenge.completed && (
+                    <Text style={styles.challengeLabel}>Challenge #{challenge.id}</Text>
+                    {isCompleted && (
                         <View style={styles.completedBadge}>
                             <Text style={styles.completedText}>✓</Text>
                         </View>
@@ -34,45 +63,62 @@ export default function ChallengesScreen({ navigation }) {
                             style={[
                                 styles.progressFill,
                                 { width: `${progressPercentage}%` },
-                                challenge.completed && styles.progressCompleted
+                                isCompleted && styles.progressCompleted
                             ]}
                         />
                     </View>
-                    <Text style={styles.progressText}>
+                    <Text style={[
+                        styles.progressText,
+                        isCompleted && styles.progressTextCompleted
+                    ]}>
                         {challenge.progress}/{challenge.target}
+                        {isCompleted && ' ✨'}
                     </Text>
                 </View>
 
                 <View style={styles.rewardContainer}>
                     <Text style={styles.rewardLabel}>Reward:</Text>
-                    <View style={styles.rewardValue}>
+                    <View style={[styles.rewardValue, isCompleted && styles.rewardValueClaimed]}>
                         <Text style={styles.coinIcon}>🪙</Text>
-                        <Text style={styles.rewardText}>{challenge.reward}</Text>
+                        <Text style={[styles.rewardText, isCompleted && styles.rewardTextClaimed]}>
+                            {challenge.reward}
+                        </Text>
+                        {isCompleted && <Text style={styles.claimedText}> Claimed!</Text>}
                     </View>
                 </View>
 
-                {challenge.completed && (
+                {isCompleted && (
                     <View style={styles.completedMessage}>
                         <Text style={styles.completedMessageText}>Challenge Completed! 🎉</Text>
                     </View>
                 )}
+
+                {!isCompleted && (
+                    <View style={styles.progressHint}>
+                        <Text style={styles.progressHintText}>
+                            {challenge.target - challenge.progress} more to go!
+                        </Text>
+                    </View>
+                )}
             </View>
         );
-    };
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={navigateBack}
+                    accessibilityLabel="Go back"
                 >
                     <Text style={styles.backText}>←</Text>
                 </TouchableOpacity>
                 <Text style={styles.title}>Challenges</Text>
                 <TouchableOpacity
                     style={styles.coinContainer}
-                    onPress={() => navigation.navigate('Shop')}
+                    onPress={navigateToShop}
+                    accessibilityLabel={`${coins} coins, tap to visit shop`}
                 >
                     <Text style={styles.coinIcon}>🪙</Text>
                     <Text style={styles.coinText}>{coins}</Text>
@@ -83,26 +129,73 @@ export default function ChallengesScreen({ navigation }) {
                 <View style={styles.content}>
                     <Text style={styles.subtitle}>Complete challenges to earn coins!</Text>
 
-                    <View style={styles.challengesList}>
-                        {challenges.map(challenge => renderChallenge(challenge))}
+                    {/* Challenge Statistics */}
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statCard}>
+                            <Text style={styles.statNumber}>{challengeStats.completed}</Text>
+                            <Text style={styles.statLabel}>Completed</Text>
+                        </View>
+                        <View style={styles.statCard}>
+                            <Text style={styles.statNumber}>{challengeStats.total - challengeStats.completed}</Text>
+                            <Text style={styles.statLabel}>Remaining</Text>
+                        </View>
+                        <View style={styles.statCard}>
+                            <Text style={styles.statNumber}>{challengeStats.totalReward}</Text>
+                            <Text style={styles.statLabel}>🪙 Earned</Text>
+                        </View>
                     </View>
 
+                    {/* Active Challenges */}
+                    {activeChallenges.length > 0 && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>🎯 Active Challenges</Text>
+                            <View style={styles.challengesList}>
+                                {activeChallenges.map(challenge => renderChallenge(challenge))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Completed Challenges */}
+                    {completedCount > 0 && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>✅ Completed Challenges</Text>
+                            <View style={styles.challengesList}>
+                                {challenges.filter(c => c.completed).map(challenge => renderChallenge(challenge))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Tips Section */}
                     <View style={styles.tipContainer}>
-                        <Text style={styles.tipTitle}>💡 Tips</Text>
+                        <Text style={styles.tipTitle}>💡 Pro Tips</Text>
                         <Text style={styles.tipText}>
                             • Find flowers in your garden or local park{'\n'}
                             • Different flowers give different coin rewards{'\n'}
+                            • Rare flowers are worth more coins{'\n'}
                             • Use your coins to buy beautiful new pots{'\n'}
-                            • Complete challenges for bonus rewards!
+                            • Complete challenges for bonus rewards!{'\n'}
+                            • Take photos in good lighting for better recognition
                         </Text>
                     </View>
+
+                    {/* Motivation Section */}
+                    {activeChallenges.length === 0 && completedCount === challenges.length && (
+                        <View style={styles.motivationContainer}>
+                            <Text style={styles.motivationTitle}>🏆 All Challenges Complete!</Text>
+                            <Text style={styles.motivationText}>
+                                Amazing work! You've completed all available challenges.
+                                Keep collecting flowers to grow your collection!
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
 
             <View style={styles.bottomActions}>
                 <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={() => navigation.navigate('Camera')}
+                    onPress={navigateToCamera}
+                    accessibilityLabel="Start collecting flowers"
                 >
                     <Text style={styles.actionButtonIcon}>📷</Text>
                     <Text style={styles.actionButtonText}>Start Collecting</Text>
@@ -185,12 +278,49 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#666',
         textAlign: 'center',
-        marginBottom: 30,
+        marginBottom: 25,
         fontWeight: '500',
+    },
+    statsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 30,
+    },
+    statCard: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 15,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        minWidth: 80,
+    },
+    statNumber: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#2E7D32',
+        marginBottom: 5,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    section: {
+        marginBottom: 30,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#2E7D32',
+        marginBottom: 15,
     },
     challengesList: {
         gap: 20,
-        marginBottom: 30,
     },
     challengeCard: {
         backgroundColor: '#fff',
@@ -235,6 +365,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 20,
+        lineHeight: 24,
     },
     progressSection: {
         marginBottom: 20,
@@ -260,6 +391,21 @@ const styles = StyleSheet.create({
         color: '#4A90E2',
         textAlign: 'center',
     },
+    progressTextCompleted: {
+        color: '#4CAF50',
+    },
+    progressHint: {
+        backgroundColor: '#E3F2FD',
+        padding: 10,
+        borderRadius: 10,
+        marginTop: 10,
+    },
+    progressHintText: {
+        fontSize: 14,
+        color: '#1976D2',
+        textAlign: 'center',
+        fontWeight: '500',
+    },
     rewardContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -278,10 +424,21 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 15,
     },
+    rewardValueClaimed: {
+        backgroundColor: '#4CAF50',
+    },
     rewardText: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
+    },
+    rewardTextClaimed: {
+        color: '#fff',
+    },
+    claimedText: {
+        fontSize: 12,
+        color: '#fff',
+        fontWeight: '500',
     },
     completedMessage: {
         marginTop: 15,
@@ -303,6 +460,7 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         borderLeftWidth: 4,
         borderLeftColor: '#4A90E2',
+        marginBottom: 20,
     },
     tipTitle: {
         fontSize: 18,
@@ -313,6 +471,27 @@ const styles = StyleSheet.create({
     tipText: {
         fontSize: 14,
         color: '#1976D2',
+        lineHeight: 22,
+    },
+    motivationContainer: {
+        backgroundColor: '#FFF3E0',
+        padding: 25,
+        borderRadius: 20,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#FF9800',
+    },
+    motivationTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#E65100',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    motivationText: {
+        fontSize: 16,
+        color: '#E65100',
+        textAlign: 'center',
         lineHeight: 22,
     },
     bottomActions: {

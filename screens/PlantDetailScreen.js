@@ -31,6 +31,15 @@ export default function PlantDetailScreen({ route, navigation }) {
         }
     };
 
+    const getRarityIcon = (rarity) => {
+        switch (rarity) {
+            case 'common': return '🟢';
+            case 'uncommon': return '🟡';
+            case 'rare': return '🔴';
+            default: return '⚪';
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -42,10 +51,11 @@ export default function PlantDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
                 <Text style={styles.title}>Plant Details</Text>
                 <TouchableOpacity
-                    style={styles.coinButton}
+                    style={styles.coinContainer}
                     onPress={() => navigation.navigate('Shop')}
                 >
                     <Text style={styles.coinIcon}>🪙</Text>
+                    <Text style={styles.coinText}>{coins}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -54,8 +64,8 @@ export default function PlantDetailScreen({ route, navigation }) {
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
                             <View style={styles.potBase}>
-                                <View style={styles.potRim} />
-                                <View style={styles.soil} />
+                                <View style={[styles.potRim, pot.id === 'basic' ? styles.basicPot : styles.decorativePot]} />
+                                <View style={[styles.soil, pot.id === 'basic' ? styles.basicSoil : styles.decorativeSoil]} />
                                 <View style={styles.plant}>
                                     <Text style={styles.plantEmoji}>
                                         {getPlantImage(item.plantId, item.potId)}
@@ -66,35 +76,42 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                         <Text style={styles.plantName}>{plant.name}</Text>
                         <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>
+                            <Text style={styles.rarityIcon}>{getRarityIcon(plant.rarity)}</Text>
                             <Text style={styles.rarityText}>{plant.rarity.toUpperCase()}</Text>
                         </View>
                     </View>
 
                     <View style={styles.infoSection}>
-                        <Text style={styles.sectionTitle}>Description</Text>
+                        <Text style={styles.sectionTitle}>📖 Description</Text>
                         <Text style={styles.description}>{plant.description}</Text>
                     </View>
 
                     <View style={styles.detailsSection}>
-                        <Text style={styles.sectionTitle}>Details</Text>
+                        <Text style={styles.sectionTitle}>ℹ️ Details</Text>
                         <View style={styles.detailsGrid}>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Pot Type:</Text>
+                                <Text style={styles.detailLabel}>🪴 Pot Type:</Text>
                                 <Text style={styles.detailValue}>{pot.name}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Coin Value:</Text>
-                                <Text style={styles.detailValue}>🪙 {plant.coins}</Text>
+                                <Text style={styles.detailLabel}>💰 Coin Value:</Text>
+                                <View style={styles.coinValueContainer}>
+                                    <Text style={styles.detailCoinIcon}>🪙</Text>
+                                    <Text style={styles.detailValue}>{plant.coins}</Text>
+                                </View>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Discovered:</Text>
+                                <Text style={styles.detailLabel}>📅 Discovered:</Text>
                                 <Text style={styles.detailValue}>{formatDate(item.discoveredAt)}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Rarity:</Text>
-                                <Text style={[styles.detailValue, { color: getRarityColor(plant.rarity) }]}>
-                                    {plant.rarity}
-                                </Text>
+                                <Text style={styles.detailLabel}>✨ Rarity:</Text>
+                                <View style={styles.rarityContainer}>
+                                    <Text style={styles.rarityEmoji}>{getRarityIcon(plant.rarity)}</Text>
+                                    <Text style={[styles.detailValue, { color: getRarityColor(plant.rarity) }]}>
+                                        {plant.rarity}
+                                    </Text>
+                                </View>
                             </View>
                         </View>
                     </View>
@@ -152,13 +169,15 @@ export default function PlantDetailScreen({ route, navigation }) {
                     style={styles.actionButton}
                     onPress={() => navigation.navigate('Collection')}
                 >
-                    <Text style={styles.actionButtonText}>🌸 Back to Collection</Text>
+                    <Text style={styles.actionButtonIcon}>🌸</Text>
+                    <Text style={styles.actionButtonText}>Collection</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.actionButton, styles.secondaryButton]}
                     onPress={() => navigation.navigate('Camera')}
                 >
-                    <Text style={styles.actionButtonText}>📷 Find More</Text>
+                    <Text style={styles.actionButtonIcon}>📷</Text>
+                    <Text style={styles.actionButtonText}>Find More</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -168,50 +187,64 @@ export default function PlantDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f5f0',
+        backgroundColor: '#F5F3F0',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomColor: '#E8E8E8',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        backgroundColor: '#F0F0F0',
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
     },
     backText: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#333',
     },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#2E7D32',
+        letterSpacing: 0.5,
     },
-    coinButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    coinContainer: {
         backgroundColor: '#FFA500',
-        justifyContent: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
     },
     coinIcon: {
-        fontSize: 18,
+        fontSize: 16,
+        marginRight: 5,
+    },
+    coinText: {
+        fontSize: 16,
+        fontWeight: 'bold',
         color: '#fff',
     },
     scrollView: {
@@ -227,165 +260,240 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
+        shadowRadius: 8,
+        elevation: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     plantContainer: {
         marginBottom: 20,
     },
     potBase: {
         position: 'relative',
-        width: 80,
-        height: 100,
+        width: 100,
+        height: 120,
     },
     potRim: {
         position: 'absolute',
         top: 0,
-        left: 8,
-        right: 8,
-        height: 10,
-        backgroundColor: '#8B4513',
+        left: 10,
+        right: 10,
+        height: 12,
         borderRadius: 25,
-        borderWidth: 1,
-        borderColor: '#654321',
+        borderWidth: 2,
+    },
+    basicPot: {
+        backgroundColor: '#D2691E',
+        borderColor: '#8B4513',
+    },
+    decorativePot: {
+        backgroundColor: '#CD853F',
+        borderColor: '#A0522D',
     },
     soil: {
         position: 'absolute',
-        top: 10,
-        left: 10,
-        right: 10,
-        bottom: 20,
-        backgroundColor: '#8B4513',
+        top: 12,
+        left: 12,
+        right: 12,
+        bottom: 25,
         borderBottomLeftRadius: 25,
         borderBottomRightRadius: 25,
-        borderWidth: 1,
-        borderColor: '#654321',
+        borderWidth: 2,
         borderTopWidth: 0,
+    },
+    basicSoil: {
+        backgroundColor: '#8B4513',
+        borderColor: '#654321',
+    },
+    decorativeSoil: {
+        backgroundColor: '#A0522D',
+        borderColor: '#8B4513',
     },
     plant: {
         position: 'absolute',
-        top: -15,
+        top: -20,
         left: '50%',
-        marginLeft: -20,
+        marginLeft: -25,
         alignItems: 'center',
     },
     plantEmoji: {
-        fontSize: 40,
+        fontSize: 50,
         zIndex: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     stem: {
-        width: 4,
-        height: 25,
-        backgroundColor: '#4a7c4a',
-        marginTop: -8,
+        width: 6,
+        height: 30,
+        backgroundColor: '#4CAF50',
+        marginTop: -10,
         zIndex: 1,
+        borderRadius: 3,
     },
     plantName: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        color: '#4a7c4a',
-        marginBottom: 10,
+        color: '#2E7D32',
+        marginBottom: 15,
+        textAlign: 'center',
     },
     rarityBadge: {
-        paddingHorizontal: 15,
-        paddingVertical: 5,
-        borderRadius: 15,
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    rarityIcon: {
+        fontSize: 16,
+        marginRight: 8,
     },
     rarityText: {
         color: '#fff',
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'bold',
+        letterSpacing: 1,
     },
     infoSection: {
         backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 15,
-        marginBottom: 15,
+        padding: 25,
+        borderRadius: 20,
+        marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
+        shadowRadius: 8,
+        elevation: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#4a7c4a',
+        color: '#2E7D32',
         marginBottom: 15,
     },
     description: {
         fontSize: 16,
         color: '#666',
-        lineHeight: 24,
+        lineHeight: 26,
     },
     detailsSection: {
         backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 15,
-        marginBottom: 15,
+        padding: 25,
+        borderRadius: 20,
+        marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
+        shadowRadius: 8,
+        elevation: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     detailsGrid: {
-        gap: 12,
+        gap: 15,
     },
     detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: '#F0F0F0',
     },
     detailLabel: {
         fontSize: 16,
         color: '#666',
-        fontWeight: '500',
+        fontWeight: '600',
+        flex: 1,
     },
     detailValue: {
         fontSize: 16,
         color: '#333',
         fontWeight: 'bold',
+        textAlign: 'right',
+    },
+    coinValueContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    detailCoinIcon: {
+        fontSize: 16,
+        marginRight: 4,
+    },
+    rarityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    rarityEmoji: {
+        fontSize: 16,
+        marginRight: 6,
     },
     factsSection: {
-        backgroundColor: '#e8f5e8',
-        padding: 20,
-        borderRadius: 15,
-        borderLeftWidth: 4,
-        borderLeftColor: '#4a7c4a',
+        backgroundColor: '#E8F5E8',
+        padding: 25,
+        borderRadius: 20,
+        borderLeftWidth: 5,
+        borderLeftColor: '#4CAF50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     factsList: {
-        gap: 8,
+        gap: 12,
     },
     factItem: {
-        fontSize: 14,
-        color: '#666',
-        lineHeight: 20,
+        fontSize: 15,
+        color: '#2E7D32',
+        lineHeight: 22,
+        fontWeight: '500',
     },
     bottomActions: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        padding: 20,
+        justifyContent: 'space-between',
+        padding: 25,
         backgroundColor: '#fff',
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
-        gap: 10,
+        borderTopColor: '#E8E8E8',
+        gap: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     actionButton: {
-        backgroundColor: '#4a7c4a',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 20,
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 25,
+        paddingVertical: 15,
+        borderRadius: 25,
         flex: 1,
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     secondaryButton: {
-        backgroundColor: '#888',
+        backgroundColor: '#757575',
+    },
+    actionButtonIcon: {
+        fontSize: 18,
+        marginRight: 8,
     },
     actionButtonText: {
         color: '#fff',

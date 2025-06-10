@@ -85,20 +85,21 @@ export default function CollectionScreen({ navigation }) {
                 </TouchableOpacity>
                 <Text style={styles.title}>Your collection</Text>
                 <TouchableOpacity
-                    style={styles.challengesButton}
-                    onPress={() => navigation.navigate('Challenges')}
-                >
-                    <Text style={styles.challengesIcon}>✓</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.subHeader}>
-                <TouchableOpacity
                     style={styles.coinContainer}
                     onPress={() => navigation.navigate('Shop')}
                 >
                     <Text style={styles.coinIcon}>🪙</Text>
                     <Text style={styles.coinText}>{coins}</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.subHeader}>
+                <TouchableOpacity
+                    style={styles.challengesButton}
+                    onPress={() => navigation.navigate('Challenges')}
+                >
+                    <Text style={styles.challengesIcon}>🎯</Text>
+                    <Text style={styles.challengesText}>Challenges</Text>
                 </TouchableOpacity>
             </View>
 
@@ -171,20 +172,14 @@ const styles = StyleSheet.create({
     },
     backIcon: {
         fontSize: 20,
+        color: '#333',
+        fontWeight: 'bold',
     },
     title: {
         fontSize: 22,
         fontWeight: 'bold',
         color: '#2E7D32',
         letterSpacing: 0.5,
-    },
-    subHeader: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#E8E8E8',
-        alignItems: 'flex-end',
     },
     coinContainer: {
         backgroundColor: '#FFA500',
@@ -204,6 +199,36 @@ const styles = StyleSheet.create({
         marginRight: 5,
     },
     coinText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    subHeader: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E8E8E8',
+        alignItems: 'flex-start',
+    },
+    challengesButton: {
+        backgroundColor: '#4A90E2',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    challengesIcon: {
+        fontSize: 16,
+        marginRight: 5,
+    },
+    challengesText: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
