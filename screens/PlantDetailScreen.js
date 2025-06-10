@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Image,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -7,11 +8,41 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useAppContext } from '../context/AppContext';
+import { useAppState } from '../context/AppContext';
 
 export default function PlantDetailScreen({ route, navigation }) {
     const { item, plant, pot } = route.params;
-    const { getPlantImage, coins } = useAppContext();
+    const { coins } = useAppState();
+
+    // Direct image mapping for plants
+    const getPlantImageDirect = (plantId, potId = 'basic') => {
+        const imageMap = {
+            cornflower: {
+                basic: require('../assets/images/plants/cornflower_basic_pot.png'),
+                round: require('../assets/images/plants/cornflower_round_pot.png'),
+            },
+            daisy: {
+                basic: require('../assets/images/plants/daisy_basic_pot.png'),
+                round: require('../assets/images/plants/daisy_round_pot.png'),
+            },
+            poppy: {
+                basic: require('../assets/images/plants/poppy_basic_pot.png'),
+                round: require('../assets/images/plants/poppy_round_pot.png'),
+            }
+        };
+
+        if (imageMap[plantId] && imageMap[plantId][potId]) {
+            return imageMap[plantId][potId];
+        }
+
+        // Fallback to basic pot if round not available
+        if (imageMap[plantId] && imageMap[plantId]['basic']) {
+            return imageMap[plantId]['basic'];
+        }
+
+        // Ultimate fallback - return a default image or null
+        return null;
+    };
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -40,6 +71,57 @@ export default function PlantDetailScreen({ route, navigation }) {
         }
     };
 
+    const getPlantFacts = (plantId) => {
+        const facts = {
+            cornflower: [
+                "• Also known as Bachelor's Button",
+                "• Native to Europe and originally a wildflower",
+                "• Traditional symbol of delicacy and grace",
+                "• Edible flowers often used in salads",
+                "• Can bloom from spring until first frost",
+                "• Attracts butterflies and beneficial insects"
+            ],
+            daisy: [
+                "• Name comes from 'day's eye'",
+                "• Closes petals at night and in rain",
+                "• Symbol of innocence and purity",
+                "• Edible flowers used in salads and teas",
+                "• Can bloom almost year-round in mild climates",
+                "• One of the most recognizable flowers worldwide"
+            ],
+            poppy: [
+                "• Symbol of remembrance and peace",
+                "• Self-seeding annual that spreads naturally",
+                "• Blooms are short-lived but spectacular",
+                "• Seeds are used in cooking and baking",
+                "• Can grow in poor soil conditions",
+                "• Attracts bees and other pollinators"
+            ],
+            lily_valley: [
+                "• Native to cool regions of Northern Hemisphere",
+                "• Blooms in late spring with sweet fragrance",
+                "• Symbol of humility and sweetness",
+                "• All parts of the plant are poisonous",
+                "• Used in traditional perfumery",
+                "• Prefers shaded woodland areas"
+            ],
+            rose: [
+                "• Over 300 species and thousands of cultivars",
+                "• Symbol of love and beauty across cultures",
+                "• Rose hips are rich in vitamin C",
+                "• Can live for over 100 years",
+                "• Used in perfumes, cosmetics, and cooking",
+                "• National flower of several countries"
+            ]
+        };
+        return facts[plantId] || [
+            "• A beautiful flower in your collection",
+            "• Each flower has its own unique characteristics",
+            "• Collecting flowers brings joy and knowledge",
+            "• Take care of your plants and they'll thrive"
+        ];
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -63,16 +145,11 @@ export default function PlantDetailScreen({ route, navigation }) {
                 <View style={styles.content}>
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
-                            <View style={styles.potBase}>
-                                <View style={[styles.potRim, pot.id === 'basic' ? styles.basicPot : styles.decorativePot]} />
-                                <View style={[styles.soil, pot.id === 'basic' ? styles.basicSoil : styles.decorativeSoil]} />
-                                <View style={styles.plant}>
-                                    <Text style={styles.plantEmoji}>
-                                        {getPlantImage(item.plantId, item.potId)}
-                                    </Text>
-                                    <View style={styles.stem} />
-                                </View>
-                            </View>
+                            <Image
+                                source={getPlantImageDirect(item.plantId, item.potId)}
+                                style={styles.plantDetailImage}
+                                resizeMode="contain"
+                            />
                         </View>
                         <Text style={styles.plantName}>{plant.name}</Text>
                         <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>
@@ -119,46 +196,53 @@ export default function PlantDetailScreen({ route, navigation }) {
                     <View style={styles.factsSection}>
                         <Text style={styles.sectionTitle}>🌱 Fun Facts</Text>
                         <View style={styles.factsList}>
-                            {plant.id === 'lily_valley' && (
-                                <>
-                                    <Text style={styles.factItem}>• Native to cool regions of Northern Hemisphere</Text>
-                                    <Text style={styles.factItem}>• Blooms in late spring with sweet fragrance</Text>
-                                    <Text style={styles.factItem}>• Symbol of humility and sweetness</Text>
-                                    <Text style={styles.factItem}>• All parts of the plant are poisonous</Text>
-                                </>
-                            )}
-                            {plant.id === 'rose' && (
-                                <>
-                                    <Text style={styles.factItem}>• Over 300 species and thousands of cultivars</Text>
-                                    <Text style={styles.factItem}>• Symbol of love and beauty across cultures</Text>
-                                    <Text style={styles.factItem}>• Rose hips are rich in vitamin C</Text>
-                                    <Text style={styles.factItem}>• Can live for over 100 years</Text>
-                                </>
-                            )}
-                            {plant.id === 'daisy' && (
-                                <>
-                                    <Text style={styles.factItem}>• Name comes from 'day's eye'</Text>
-                                    <Text style={styles.factItem}>• Closes petals at night and in rain</Text>
-                                    <Text style={styles.factItem}>• Symbol of innocence and purity</Text>
-                                    <Text style={styles.factItem}>• Edible flowers used in salads</Text>
-                                </>
-                            )}
-                            {plant.id === 'sunflower' && (
-                                <>
-                                    <Text style={styles.factItem}>• Can grow up to 10 feet tall</Text>
-                                    <Text style={styles.factItem}>• Flowers follow the sun throughout the day</Text>
-                                    <Text style={styles.factItem}>• Seeds are a healthy snack rich in vitamin E</Text>
-                                    <Text style={styles.factItem}>• Native to North and Central America</Text>
-                                </>
-                            )}
-                            {plant.id === 'tulip' && (
-                                <>
-                                    <Text style={styles.factItem}>• Originally from Central Asia</Text>
-                                    <Text style={styles.factItem}>• Became famous during Dutch Tulip Mania</Text>
-                                    <Text style={styles.factItem}>• Bloom for only 3-7 days each year</Text>
-                                    <Text style={styles.factItem}>• Come in almost every color except true blue</Text>
-                                </>
-                            )}
+                            {getPlantFacts(plant.id).map((fact, index) => (
+                                <Text key={index} style={styles.factItem}>{fact}</Text>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Collection Progress */}
+                    <View style={styles.progressSection}>
+                        <Text style={styles.sectionTitle}>📊 Collection Progress</Text>
+                        <View style={styles.progressContent}>
+                            <View style={styles.progressItem}>
+                                <Text style={styles.progressLabel}>Your {plant.name}s</Text>
+                                <Text style={styles.progressValue}>1 collected</Text>
+                            </View>
+                            <View style={styles.progressItem}>
+                                <Text style={styles.progressLabel}>Pot Type</Text>
+                                <Text style={styles.progressValue}>{pot.name}</Text>
+                            </View>
+                            <View style={styles.progressItem}>
+                                <Text style={styles.progressLabel}>Discovery Date</Text>
+                                <Text style={styles.progressValue}>
+                                    {new Date(item.discoveredAt).toLocaleDateString()}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Care Tips */}
+                    <View style={styles.careSection}>
+                        <Text style={styles.sectionTitle}>💡 Care Tips</Text>
+                        <View style={styles.careTips}>
+                            <View style={styles.careItem}>
+                                <Text style={styles.careIcon}>💧</Text>
+                                <Text style={styles.careText}>Keep soil moist but not waterlogged</Text>
+                            </View>
+                            <View style={styles.careItem}>
+                                <Text style={styles.careIcon}>☀️</Text>
+                                <Text style={styles.careText}>Most flowers prefer bright, indirect light</Text>
+                            </View>
+                            <View style={styles.careItem}>
+                                <Text style={styles.careIcon}>🌡️</Text>
+                                <Text style={styles.careText}>Maintain moderate temperature (65-75°F)</Text>
+                            </View>
+                            <View style={styles.careItem}>
+                                <Text style={styles.careIcon}>✂️</Text>
+                                <Text style={styles.careText}>Remove dead flowers to encourage new blooms</Text>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -270,68 +354,14 @@ const styles = StyleSheet.create({
     plantContainer: {
         marginBottom: 20,
     },
-    potBase: {
-        position: 'relative',
-        width: 100,
-        height: 120,
-    },
-    potRim: {
-        position: 'absolute',
-        top: 0,
-        left: 10,
-        right: 10,
-        height: 12,
-        borderRadius: 25,
-        borderWidth: 2,
-    },
-    basicPot: {
-        backgroundColor: '#D2691E',
-        borderColor: '#8B4513',
-    },
-    decorativePot: {
-        backgroundColor: '#CD853F',
-        borderColor: '#A0522D',
-    },
-    soil: {
-        position: 'absolute',
-        top: 12,
-        left: 12,
-        right: 12,
-        bottom: 25,
-        borderBottomLeftRadius: 25,
-        borderBottomRightRadius: 25,
-        borderWidth: 2,
-        borderTopWidth: 0,
-    },
-    basicSoil: {
-        backgroundColor: '#8B4513',
-        borderColor: '#654321',
-    },
-    decorativeSoil: {
-        backgroundColor: '#A0522D',
-        borderColor: '#8B4513',
-    },
-    plant: {
-        position: 'absolute',
-        top: -20,
-        left: '50%',
-        marginLeft: -25,
-        alignItems: 'center',
-    },
-    plantEmoji: {
-        fontSize: 50,
-        zIndex: 4,
-        textShadowColor: 'rgba(0, 0, 0, 0.1)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-    },
-    stem: {
-        width: 6,
-        height: 30,
-        backgroundColor: '#4CAF50',
-        marginTop: -10,
-        zIndex: 1,
-        borderRadius: 3,
+    plantDetailImage: {
+        width: 150,
+        height: 180,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     plantName: {
         fontSize: 28,
@@ -449,6 +479,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        marginBottom: 20,
     },
     factsList: {
         gap: 12,
@@ -458,6 +489,75 @@ const styles = StyleSheet.create({
         color: '#2E7D32',
         lineHeight: 22,
         fontWeight: '500',
+    },
+    progressSection: {
+        backgroundColor: '#E3F2FD',
+        padding: 25,
+        borderRadius: 20,
+        borderLeftWidth: 5,
+        borderLeftColor: '#4A90E2',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        marginBottom: 20,
+    },
+    progressContent: {
+        gap: 15,
+    },
+    progressItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(74, 144, 226, 0.2)',
+    },
+    progressLabel: {
+        fontSize: 16,
+        color: '#1976D2',
+        fontWeight: '600',
+    },
+    progressValue: {
+        fontSize: 16,
+        color: '#1976D2',
+        fontWeight: 'bold',
+    },
+    careSection: {
+        backgroundColor: '#FFF3E0',
+        padding: 25,
+        borderRadius: 20,
+        borderLeftWidth: 5,
+        borderLeftColor: '#FF9800',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    careTips: {
+        gap: 15,
+    },
+    careItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        padding: 15,
+        borderRadius: 12,
+    },
+    careIcon: {
+        fontSize: 20,
+        marginRight: 15,
+        width: 25,
+        textAlign: 'center',
+    },
+    careText: {
+        fontSize: 15,
+        color: '#E65100',
+        fontWeight: '500',
+        flex: 1,
+        lineHeight: 20,
     },
     bottomActions: {
         flexDirection: 'row',

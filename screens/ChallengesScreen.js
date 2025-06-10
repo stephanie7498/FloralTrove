@@ -96,7 +96,7 @@ export default function ChallengesScreen({ navigation }) {
                 {!isCompleted && (
                     <View style={styles.progressHint}>
                         <Text style={styles.progressHintText}>
-                            {challenge.target - challenge.progress} more to go!
+                            {challenge.target - challenge.progress} more flower{challenge.target - challenge.progress === 1 ? '' : 's'} to go!
                         </Text>
                     </View>
                 )}
@@ -165,15 +165,43 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     )}
 
+                    {/* Collection Guide */}
+                    <View style={styles.guideContainer}>
+                        <Text style={styles.guideTitle}>🌸 Flower Collection Guide</Text>
+                        <View style={styles.flowerGuide}>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>🌾</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Cornflower</Text>
+                                    <Text style={styles.flowerDesc}>Blue wildflower - 40 coins</Text>
+                                </View>
+                            </View>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>🌼</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Daisy</Text>
+                                    <Text style={styles.flowerDesc}>White petals, yellow center - 50 coins</Text>
+                                </View>
+                            </View>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>🌺</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Poppy</Text>
+                                    <Text style={styles.flowerDesc}>Vibrant red bloom - 75 coins</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+
                     {/* Tips Section */}
                     <View style={styles.tipContainer}>
                         <Text style={styles.tipTitle}>💡 Pro Tips</Text>
                         <Text style={styles.tipText}>
                             • Find flowers in your garden or local park{'\n'}
                             • Different flowers give different coin rewards{'\n'}
-                            • Rare flowers are worth more coins{'\n'}
+                            • Rare flowers like poppies are worth more coins{'\n'}
                             • Use your coins to buy beautiful new pots{'\n'}
-                            • Complete challenges for bonus rewards!{'\n'}
+                            • Complete challenges for bonus coin rewards!{'\n'}
                             • Take photos in good lighting for better recognition
                         </Text>
                     </View>
@@ -184,7 +212,7 @@ export default function ChallengesScreen({ navigation }) {
                             <Text style={styles.motivationTitle}>🏆 All Challenges Complete!</Text>
                             <Text style={styles.motivationText}>
                                 Amazing work! You've completed all available challenges.
-                                Keep collecting flowers to grow your collection!
+                                Keep collecting flowers to grow your beautiful collection!
                             </Text>
                         </View>
                     )}
@@ -453,6 +481,47 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#2E7D32',
         textAlign: 'center',
+    },
+    guideContainer: {
+        backgroundColor: '#FFF3E0',
+        padding: 20,
+        borderRadius: 15,
+        marginBottom: 20,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF9800',
+    },
+    guideTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#E65100',
+        marginBottom: 15,
+    },
+    flowerGuide: {
+        gap: 12,
+    },
+    flowerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        padding: 12,
+        borderRadius: 10,
+    },
+    flowerEmoji: {
+        fontSize: 24,
+        marginRight: 12,
+    },
+    flowerInfo: {
+        flex: 1,
+    },
+    flowerName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#E65100',
+        marginBottom: 2,
+    },
+    flowerDesc: {
+        fontSize: 14,
+        color: '#BF360C',
     },
     tipContainer: {
         backgroundColor: '#E3F2FD',

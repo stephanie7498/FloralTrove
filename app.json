@@ -8,8 +8,7 @@
     "userInterfaceStyle": "light",
     "platforms": [
       "ios",
-      "android",
-      "web"
+      "android"
     ],
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -29,10 +28,6 @@
         "backgroundColor": "#4a7c4a"
       },
       "package": "com.floratrove.app"
-    },
-    "web": {
-      "favicon": "./assets/images/favicon.png",
-      "bundler": "metro"
     }
   }
 }

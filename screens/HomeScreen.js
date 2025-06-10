@@ -1,196 +1,251 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Image,
     ImageBackground,
+    Modal,
     SafeAreaView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
-import { useAppSelectors, useAppState } from '../context/AppContext';
+import { useAppActions, useAppState } from '../context/AppContext';
 
-export default function HomeScreen({ navigation }) {
-    // Optimized context usage - only get what we need
-    const { challenges } = useAppState();
-    const { activeChallenges, completedChallenges: completedCount } = useAppSelectors();
+export default function CameraScreen({ navigation }) {
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [showFoundModal, setShowFoundModal] = useState(false);
+    const [foundPlant, setFoundPlant] = useState(null);
+    const [foundPotId, setFoundPotId] = useState('basic');
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [recognitionFailed, setRecognitionFailed] = useState(false);
 
-    // Memoized challenge summary
-    const challengeSummary = useMemo(() => {
-        const active = activeChallenges.slice(0, 3); // Show max 3 challenges
-        const totalProgress = challenges.reduce((sum, challenge) =>
-            sum + (challenge.progress / challenge.target), 0
-        );
-        const averageProgress = challenges.length > 0 ?
-            Math.round((totalProgress / challenges.length) * 100) : 0;
+    const { coins } = useAppState();
+    const { addPlantToCollection, getPlantData } = useAppActions();
 
-        return { active, averageProgress };
-    }, [challenges, activeChallenges]);
+    // Direct image mapping for plants
+    const getPlantImageDirect = (plantId, potId = 'basic') => {
+        const imageMap = {
+            cornflower: {
+                basic: require('../assets/images/plants/cornflower_basic_pot.png'),
+                round: require('../assets/images/plants/cornflower_round_pot.png'),
+            },
+            daisy: {
+                basic: require('../assets/images/plants/daisy_basic_pot.png'),
+                round: require('../assets/images/plants/daisy_round_pot.png'),
+            },
+            poppy: {
+                basic: require('../assets/images/plants/poppy_basic_pot.png'),
+                round: require('../assets/images/plants/poppy_round_pot.png'),
+            }
+        };
 
-    // Memoized navigation functions
-    const navigateToCamera = useCallback(() => {
-        navigation.navigate('Camera');
-    }, [navigation]);
-
-    const navigateToCollection = useCallback(() => {
-        navigation.navigate('Collection');
-    }, [navigation]);
-
-    const navigateToChallenges = useCallback(() => {
-        navigation.navigate('Challenges');
-    }, [navigation]);
-
-    const renderChallengeItem = useCallback((challenge) => {
-        const progressPercentage = Math.min((challenge.progress / challenge.target) * 100, 100);
-
-        return (
-            <View key={challenge.id} style={styles.challengeItem}>
-                <View style={styles.challengeInfo}>
-                    <Text style={styles.challengeItemTitle} numberOfLines={1}>
-                        {challenge.title}
-                    </Text>
-                    <View style={styles.progressContainer}>
-                        <Text style={styles.challengeProgress}>
-                            {challenge.progress}/{challenge.target}
-                        </Text>
-                        <View style={styles.progressBar}>
-                            <View
-                                style={[
-                                    styles.progressFill,
-                                    { width: `${progressPercentage}%` }
-                                ]}
-                            />
-                        </View>
-                    </View>
-                </View>
-                {challenge.completed && (
-                    <View style={styles.completedBadge}>
-                        <Text style={styles.completedText}>✓</Text>
-                    </View>
-                )}
-            </View>
-        );
-    }, []);
-
-    const getWelcomeMessage = useMemo(() => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Good morning! 🌅";
-        if (hour < 17) return "Good afternoon! ☀️";
-        return "Good evening! 🌙";
-    }, []);
-
-    const getMotivationalMessage = useMemo(() => {
-        if (completedCount === challenges.length && challenges.length > 0) {
-            return "Amazing! All challenges completed! 🏆";
+        if (imageMap[plantId] && imageMap[plantId][potId]) {
+            return imageMap[plantId][potId];
         }
-        if (completedCount > 0) {
-            return `Great progress! ${completedCount} challenge${completedCount === 1 ? '' : 's'} completed! 🎉`;
+
+        // Fallback to basic pot if round not available
+        if (imageMap[plantId] && imageMap[plantId]['basic']) {
+            return imageMap[plantId]['basic'];
         }
-        return "Ready to start your flower collection journey? 🌸";
-    }, [completedCount, challenges.length]);
+
+        // Ultimate fallback - return a default image or null
+        return null;
+    };
+
+    const simulatePlantDetection = () => {
+        if (isProcessing) return;
+
+        setIsProcessing(true);
+        setRecognitionFailed(false);
+
+        setTimeout(() => {
+            const success = Math.random() > 0.3;
+            setIsProcessing(false);
+
+            if (success) {
+                // Use actual plant IDs that match your images
+                const availablePlants = ['cornflower', 'daisy', 'poppy'];
+                const randomPlantId = availablePlants[Math.floor(Math.random() * availablePlants.length)];
+                const plants = getPlantData();
+                const randomPlant = plants.find(p => p.id === randomPlantId);
+
+                const wasAdded = addPlantToCollection(randomPlantId);
+
+                if (wasAdded && randomPlant) {
+                    setFoundPlant(randomPlant);
+                    setFoundPotId('basic'); // Default pot for display
+                    setShowFoundModal(true);
+                } else {
+                    setRecognitionFailed(true);
+                }
+            } else {
+                setRecognitionFailed(true);
+            }
+        }, 2000);
+    };
+
+    const closeFoundModal = () => {
+        setShowFoundModal(false);
+        setFoundPlant(null);
+        setFoundPotId('basic');
+    };
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
             <ImageBackground
-                source={require('../assets/images/backgrounds/background_openingsscherm.png')}
-                style={styles.background}
+                source={require('../assets/images/backgrounds/background_challenges.png')}
+                style={styles.cameraView}
                 resizeMode="cover"
             >
-                <View style={styles.header}>
-                    <Image
-                        source={require('../assets/images/TextAndSymbols/FloralTroveText.png')}
-                        style={styles.titleImage}
-                        resizeMode="contain"
-                    />
-                </View>
-
-                <View style={styles.content}>
-                    {/* Welcome Section */}
-                    <View style={styles.welcomeSection}>
-                        <Text style={styles.welcomeMessage}>{getWelcomeMessage}</Text>
-                        <Text style={styles.motivationalMessage}>{getMotivationalMessage}</Text>
+                <View style={styles.cameraOverlay}>
+                    {/* Top bar */}
+                    <View style={styles.topBar}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backText}>←</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.coinContainer}
+                            onPress={() => navigation.navigate('Shop')}
+                        >
+                            <Text style={styles.coinIcon}>🪙</Text>
+                            <Text style={styles.coinText}>{coins}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.infoButton}
+                            onPress={() => setShowInstructions(true)}
+                        >
+                            <Text style={styles.infoText}>How it works</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Quick Stats */}
-                    {challenges.length > 0 && (
-                        <View style={styles.statsSection}>
-                            <View style={styles.statItem}>
-                                <Text style={styles.statNumber}>{completedCount}</Text>
-                                <Text style={styles.statLabel}>Completed</Text>
-                            </View>
-                            <View style={styles.statDivider} />
-                            <View style={styles.statItem}>
-                                <Text style={styles.statNumber}>{activeChallenges.length}</Text>
-                                <Text style={styles.statLabel}>Active</Text>
-                            </View>
-                            <View style={styles.statDivider} />
-                            <View style={styles.statItem}>
-                                <Text style={styles.statNumber}>{challengeSummary.averageProgress}%</Text>
-                                <Text style={styles.statLabel}>Progress</Text>
-                            </View>
-                        </View>
-                    )}
+                    {/* Center viewfinder */}
+                    <View style={styles.viewfinderContainer}>
+                        <View style={styles.viewfinder}>
+                            <View style={styles.viewfinderCorner} />
+                            <View style={[styles.viewfinderCorner, styles.topRight]} />
+                            <View style={[styles.viewfinderCorner, styles.bottomLeft]} />
+                            <View style={[styles.viewfinderCorner, styles.bottomRight]} />
 
-                    {/* Challenges Preview */}
-                    {challengeSummary.active.length > 0 && (
-                        <View style={styles.challengesSection}>
-                            <View style={styles.challengesSectionHeader}>
-                                <Text style={styles.challengesSectionTitle}>🎯 Your Challenges</Text>
+                            {!isProcessing && !recognitionFailed && (
+                                <View style={styles.centerText}>
+                                    <Text style={styles.instructionText}>Point your camera at a</Text>
+                                    <Text style={styles.instructionText}>flower and snap a picture</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {isProcessing && (
+                            <View style={styles.processingContainer}>
+                                <ActivityIndicator size="large" color="#fff" />
+                                <Text style={styles.processingText}>Scanning...</Text>
+                            </View>
+                        )}
+
+                        {recognitionFailed && (
+                            <View style={styles.failureContainer}>
+                                <Text style={styles.failureTitle}>Cannot recognize flower.</Text>
                                 <TouchableOpacity
-                                    style={styles.viewAllButton}
-                                    onPress={navigateToChallenges}
-                                    accessibilityLabel="View all challenges"
+                                    style={styles.tryAgainButton}
+                                    onPress={() => setRecognitionFailed(false)}
                                 >
-                                    <Text style={styles.viewAllText}>View All</Text>
+                                    <Text style={styles.tryAgainText}>Try again</Text>
                                 </TouchableOpacity>
                             </View>
+                        )}
+                    </View>
 
-                            <View style={styles.challengesList}>
-                                {challengeSummary.active.map(challenge => renderChallengeItem(challenge))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Empty State for Challenges */}
-                    {challenges.length === 0 && (
-                        <View style={styles.emptyChallengesSection}>
-                            <Text style={styles.emptyChallengesTitle}>🎯 Ready for Challenges?</Text>
-                            <Text style={styles.emptyChallengesText}>
-                                Complete exciting challenges to earn coins and grow your collection!
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.viewChallengesButton}
-                                onPress={navigateToChallenges}
-                            >
-                                <Text style={styles.viewChallengesButtonText}>View Challenges</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {/* Main Action Buttons */}
-                    <View style={styles.buttonContainer}>
+                    {/* Bottom controls */}
+                    <View style={styles.bottomControls}>
                         <TouchableOpacity
-                            style={styles.collectButton}
-                            onPress={navigateToCamera}
-                            accessibilityLabel="Start collecting flowers"
+                            style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
+                            onPress={simulatePlantDetection}
+                            disabled={isProcessing}
                         >
-                            <Text style={styles.collectButtonIcon}>📷</Text>
-                            <Text style={styles.collectButtonText}>Collect now</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.collectionButton}
-                            onPress={navigateToCollection}
-                            accessibilityLabel="View my collection"
-                        >
-                            <Text style={styles.collectionButtonIcon}>🌸</Text>
-                            <Text style={styles.collectionButtonText}>My Collection</Text>
+                            <Text style={styles.captureIcon}>📷</Text>
+                            <Text style={styles.captureText}>Take picture</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </ImageBackground>
+
+            {/* Found Plant Modal */}
+            <Modal
+                visible={showFoundModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={closeFoundModal}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>
+                            You found a {foundPlant?.name}!
+                        </Text>
+                        <View style={styles.modalPlant}>
+                            {foundPlant && (
+                                <Image
+                                    source={getPlantImageDirect(foundPlant.id, foundPotId)}
+                                    style={styles.modalPlantImage}
+                                    resizeMode="contain"
+                                />
+                            )}
+                        </View>
+                        <View style={styles.coinReward}>
+                            <Text style={styles.coinRewardText}>+{foundPlant?.coins} coins! 🪙</Text>
+                        </View>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalButton}
+                                onPress={() => {
+                                    closeFoundModal();
+                                    navigation.navigate('Collection');
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>To collection</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonSecondary]}
+                                onPress={closeFoundModal}
+                            >
+                                <Text style={styles.modalButtonText}>Collect More</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Instructions Modal */}
+            <Modal
+                visible={showInstructions}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowInstructions(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.instructionsContent}>
+                        <Text style={styles.instructionsTitle}>How it works</Text>
+                        <Text style={styles.instructionsText}>
+                            Point your camera at a flower and snap a picture{'\n\n'}
+                            Discover beautiful flowers like:{'\n'}
+                            🌾 Cornflowers - Blue wildflowers{'\n'}
+                            🌼 Daisies - White with yellow centers{'\n'}
+                            🌺 Poppies - Vibrant red blooms{'\n\n'}
+                            Collect them in different pots and{'\n'}
+                            complete challenges to earn coins!{'\n\n'}
+                            Have fun exploring! 🌸
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.okButton}
+                            onPress={() => setShowInstructions(false)}
+                        >
+                            <Text style={styles.okButtonText}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -198,293 +253,334 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        overflow: 'hidden',
+        backgroundColor: '#000',
     },
-    background: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-    },
-    header: {
-        alignItems: 'center',
-        marginTop: 40,
-        marginBottom: 10,
-    },
-    titleImage: {
-        width: 650,
-        height: 260,
-    },
-    content: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        paddingBottom: 20,
-        flex: 1,
-        justifyContent: 'center',
-        overflow: 'hidden',
-    },
-    welcomeSection: {
-        alignItems: 'center',
-        marginBottom: 20,
-        paddingHorizontal: 20,
-    },
-    welcomeMessage: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 8,
-        textShadowColor: 'rgba(0, 0, 0, 0.8)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
-    },
-    motivationalMessage: {
-        fontSize: 16,
-        color: '#fff',
-        textAlign: 'center',
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-    },
-    statsSection: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        marginHorizontal: 20,
-        marginBottom: 20,
-        paddingVertical: 15,
-        borderRadius: 15,
-        backdropFilter: 'blur(10px)',
-    },
-    statItem: {
-        alignItems: 'center',
+    cameraView: {
         flex: 1,
     },
-    statNumber: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        textShadowColor: 'rgba(0, 0, 0, 0.8)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
+    cameraOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
-    statLabel: {
-        fontSize: 12,
-        color: '#fff',
-        fontWeight: '500',
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-    },
-    statDivider: {
-        width: 1,
-        height: 30,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    challengesSection: {
-        padding: 20,
-        marginBottom: 15,
-        marginHorizontal: 5,
-    },
-    challengesSectionHeader: {
+    topBar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        paddingHorizontal: 20,
+        paddingTop: 60,
+        paddingBottom: 20,
     },
-    challengesSectionTitle: {
-        fontSize: 20,
+    backButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    backText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    coinContainer: {
+        backgroundColor: 'rgba(255, 165, 0, 0.95)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    coinIcon: {
+        fontSize: 16,
+        marginRight: 5,
+        color: '#fff',
+    },
+    coinText: {
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
     },
-    viewAllButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
+    infoButton: {
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
         borderRadius: 20,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
     },
-    viewAllText: {
+    infoText: {
         color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-    },
-    challengesList: {
-        gap: 12,
-    },
-    challengeItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        paddingHorizontal: 18,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    challengeInfo: {
-        flex: 1,
-        marginRight: 10,
-    },
-    challengeItemTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#fff',
-        marginBottom: 8,
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
     },
-    progressContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    challengeProgress: {
-        fontSize: 14,
-        color: '#fff',
-        fontWeight: 'bold',
-        minWidth: 40,
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-    },
-    progressBar: {
+    viewfinderContainer: {
         flex: 1,
-        height: 6,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: 3,
-        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
     },
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#4CAF50',
-        borderRadius: 3,
+    viewfinder: {
+        width: 250,
+        height: 250,
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    completedBadge: {
-        backgroundColor: '#4CAF50',
+    viewfinderCorner: {
+        position: 'absolute',
         width: 30,
         height: 30,
-        borderRadius: 15,
-        justifyContent: 'center',
+        borderColor: '#4CAF50',
+        top: 0,
+        left: 0,
+        borderTopWidth: 4,
+        borderLeftWidth: 4,
+        borderTopLeftRadius: 8,
+    },
+    topRight: {
+        top: 0,
+        right: 0,
+        left: 'auto',
+        borderTopWidth: 4,
+        borderRightWidth: 4,
+        borderLeftWidth: 0,
+        borderTopRightRadius: 8,
+    },
+    bottomLeft: {
+        bottom: 0,
+        top: 'auto',
+        borderBottomWidth: 4,
+        borderLeftWidth: 4,
+        borderTopWidth: 0,
+        borderBottomLeftRadius: 8,
+    },
+    bottomRight: {
+        bottom: 0,
+        right: 0,
+        top: 'auto',
+        left: 'auto',
+        borderBottomWidth: 4,
+        borderRightWidth: 4,
+        borderTopWidth: 0,
+        borderLeftWidth: 0,
+        borderBottomRightRadius: 8,
+    },
+    centerText: {
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    completedText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    emptyChallengesSection: {
-        alignItems: 'center',
-        padding: 30,
-        marginHorizontal: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        borderRadius: 20,
-        marginBottom: 20,
-    },
-    emptyChallengesTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 10,
-        textAlign: 'center',
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
-    },
-    emptyChallengesText: {
-        fontSize: 16,
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 20,
-        lineHeight: 22,
-        textShadowColor: 'rgba(0, 0, 0, 0.7)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
-    },
-    viewChallengesButton: {
-        backgroundColor: '#4A90E2',
-        paddingVertical: 12,
-        paddingHorizontal: 25,
-        borderRadius: 25,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    viewChallengesButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    buttonContainer: {
-        gap: 15,
-        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderRadius: 15,
     },
-    collectButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        paddingHorizontal: 40,
-        paddingVertical: 18,
-        borderRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
-        alignItems: 'center',
-        minWidth: 250,
-        flexDirection: 'row',
-        justifyContent: 'center',
-    },
-    collectButtonIcon: {
-        fontSize: 20,
-        marginRight: 10,
-    },
-    collectButtonText: {
-        color: '#2E7D32',
-        fontSize: 20,
-        fontWeight: '700',
+    instructionText: {
+        color: '#fff',
+        fontSize: 16,
         textAlign: 'center',
+        fontWeight: '500',
+        lineHeight: 22,
     },
-    collectionButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-        paddingHorizontal: 40,
-        paddingVertical: 16,
-        borderRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 4,
+    processingContainer: {
+        position: 'absolute',
         alignItems: 'center',
-        minWidth: 250,
-        flexDirection: 'row',
-        justifyContent: 'center',
+        gap: 15,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 30,
+        paddingVertical: 20,
+        borderRadius: 20,
     },
-    collectionButtonIcon: {
-        fontSize: 18,
-        marginRight: 10,
-    },
-    collectionButtonText: {
-        color: '#2E7D32',
+    processingText: {
+        color: '#fff',
         fontSize: 18,
         fontWeight: '600',
+    },
+    failureContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        backgroundColor: 'rgba(244, 67, 54, 0.9)',
+        padding: 25,
+        borderRadius: 20,
+        gap: 15,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    failureTitle: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
         textAlign: 'center',
+    },
+    tryAgainButton: {
+        backgroundColor: '#fff',
+        paddingHorizontal: 25,
+        paddingVertical: 12,
+        borderRadius: 20,
+    },
+    tryAgainText: {
+        color: '#F44336',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    bottomControls: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    captureButton: {
+        backgroundColor: 'rgba(76, 175, 80, 0.95)',
+        paddingHorizontal: 35,
+        paddingVertical: 20,
+        borderRadius: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderWidth: 3,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    captureButtonDisabled: {
+        backgroundColor: 'rgba(128, 128, 128, 0.7)',
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    captureIcon: {
+        fontSize: 24,
+    },
+    captureText: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 35,
+        borderRadius: 25,
+        alignItems: 'center',
+        width: '85%',
+        maxWidth: 320,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+        textAlign: 'center',
+        marginBottom: 25,
+        lineHeight: 28,
+    },
+    modalPlant: {
+        marginBottom: 20,
+        backgroundColor: '#F8F8F8',
+        borderRadius: 20,
+        padding: 15,
+        alignItems: 'center',
+    },
+    modalPlantImage: {
+        width: 120,
+        height: 140,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    coinReward: {
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 15,
+        marginBottom: 25,
+    },
+    coinRewardText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    modalButtons: {
+        gap: 15,
+        width: '100%',
+    },
+    modalButton: {
+        backgroundColor: '#4CAF50',
+        paddingVertical: 15,
+        borderRadius: 20,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    modalButtonSecondary: {
+        backgroundColor: '#757575',
+    },
+    modalButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    instructionsContent: {
+        backgroundColor: '#fff',
+        padding: 35,
+        borderRadius: 25,
+        alignItems: 'center',
+        width: '90%',
+        maxWidth: 350,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    instructionsTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+        marginBottom: 25,
+    },
+    instructionsText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 30,
+    },
+    okButton: {
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 50,
+        paddingVertical: 15,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    okButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });

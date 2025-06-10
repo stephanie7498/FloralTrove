@@ -10,7 +10,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useAppContext } from '../context/AppContext';
+import { useAppActions, useAppState } from '../context/AppContext';
 
 export default function CameraScreen({ navigation }) {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -20,8 +20,38 @@ export default function CameraScreen({ navigation }) {
     const [showInstructions, setShowInstructions] = useState(false);
     const [recognitionFailed, setRecognitionFailed] = useState(false);
 
-    const { addPlantToCollection, getPlantData, getPlantImage, coins } = useAppContext();
-    const plants = getPlantData();
+    const { coins } = useAppState();
+    const { addPlantToCollection, getPlantData } = useAppActions();
+
+    // Direct image mapping for plants
+    const getPlantImageDirect = (plantId, potId = 'basic') => {
+        const imageMap = {
+            cornflower: {
+                basic: require('../assets/images/plants/cornflower_basic_pot.png'),
+                round: require('../assets/images/plants/cornflower_round_pot.png'),
+            },
+            daisy: {
+                basic: require('../assets/images/plants/daisy_basic_pot.png'),
+                round: require('../assets/images/plants/daisy_round_pot.png'),
+            },
+            poppy: {
+                basic: require('../assets/images/plants/poppy_basic_pot.png'),
+                round: require('../assets/images/plants/poppy_round_pot.png'),
+            }
+        };
+
+        if (imageMap[plantId] && imageMap[plantId][potId]) {
+            return imageMap[plantId][potId];
+        }
+
+        // Fallback to basic pot if round not available
+        if (imageMap[plantId] && imageMap[plantId]['basic']) {
+            return imageMap[plantId]['basic'];
+        }
+
+        // Ultimate fallback - return a default image or null
+        return null;
+    };
 
     const simulatePlantDetection = () => {
         if (isProcessing) return;
@@ -34,10 +64,15 @@ export default function CameraScreen({ navigation }) {
             setIsProcessing(false);
 
             if (success) {
-                const randomPlant = plants[Math.floor(Math.random() * plants.length)];
-                const wasAdded = addPlantToCollection(randomPlant.id);
+                // Use actual plant IDs that match your images
+                const availablePlants = ['cornflower', 'daisy', 'poppy'];
+                const randomPlantId = availablePlants[Math.floor(Math.random() * availablePlants.length)];
+                const plants = getPlantData();
+                const randomPlant = plants.find(p => p.id === randomPlantId);
 
-                if (wasAdded) {
+                const wasAdded = addPlantToCollection(randomPlantId);
+
+                if (wasAdded && randomPlant) {
                     setFoundPlant(randomPlant);
                     setFoundPotId('basic'); // Default pot for display
                     setShowFoundModal(true);
@@ -152,7 +187,7 @@ export default function CameraScreen({ navigation }) {
                         <View style={styles.modalPlant}>
                             {foundPlant && (
                                 <Image
-                                    source={getPlantImage(foundPlant.id, foundPotId)}
+                                    source={getPlantImageDirect(foundPlant.id, foundPotId)}
                                     style={styles.modalPlantImage}
                                     resizeMode="contain"
                                 />
@@ -194,9 +229,13 @@ export default function CameraScreen({ navigation }) {
                         <Text style={styles.instructionsTitle}>How it works</Text>
                         <Text style={styles.instructionsText}>
                             Point your camera at a flower and snap a picture{'\n\n'}
-                            Go to your collection or{'\n'}
-                            collect more flowers!{'\n\n'}
-                            Have fun!
+                            Discover beautiful flowers like:{'\n'}
+                            🌾 Cornflowers - Blue wildflowers{'\n'}
+                            🌼 Daisies - White with yellow centers{'\n'}
+                            🌺 Poppies - Vibrant red blooms{'\n\n'}
+                            Collect them in different pots and{'\n'}
+                            complete challenges to earn coins!{'\n\n'}
+                            Have fun exploring! 🌸
                         </Text>
                         <TouchableOpacity
                             style={styles.okButton}
@@ -456,10 +495,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8F8F8',
         borderRadius: 20,
         padding: 15,
+        alignItems: 'center',
     },
     modalPlantImage: {
-        width: 100,
-        height: 120,
+        width: 120,
+        height: 140,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
     },
     coinReward: {
         backgroundColor: '#FFA500',
@@ -516,10 +561,10 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     instructionsText: {
-        fontSize: 18,
+        fontSize: 16,
         color: '#333',
         textAlign: 'center',
-        lineHeight: 26,
+        lineHeight: 22,
         marginBottom: 30,
     },
     okButton: {

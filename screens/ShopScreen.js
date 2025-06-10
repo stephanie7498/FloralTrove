@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
     Alert,
+    Image,
     ImageBackground,
     Modal,
     SafeAreaView,
@@ -19,7 +20,17 @@ export default function ShopScreen({ navigation }) {
     // Optimized context usage
     const { coins, unlockedPots } = useAppState();
     const { buyPot, getPotData } = useAppActions();
-    const { availablePots, canAffordPot } = useAppSelectors();
+    const { canAffordPot } = useAppSelectors();
+
+    // Direct image mapping for pots
+    const getPotImageDirect = (potId) => {
+        const imageMap = {
+            basic: require('../assets/images/pots/basic_pot.png'),
+            round: require('../assets/images/pots/round_pot.png'),
+        };
+
+        return imageMap[potId] || imageMap['basic']; // fallback to basic pot
+    };
 
     // Memoize pot data to prevent unnecessary recalculations
     const pots = useMemo(() => getPotData(), [getPotData]);
@@ -116,19 +127,6 @@ export default function ShopScreen({ navigation }) {
         setSelectedPot(null);
     }, []);
 
-    // Get pot color based on ID
-    const getPotColor = useCallback((potId) => {
-        const colors = {
-            basic: '#D2691E',
-            decorative: '#CD853F',
-            ceramic: '#F5DEB3',
-            terracotta: '#D2691E',
-            premium: '#DAA520',
-            deluxe: '#B8860B'
-        };
-        return colors[potId] || '#E0E0E0';
-    }, []);
-
     // Get pot rarity indicator
     const getPotRarity = useCallback((price) => {
         if (price === 0) return { rarity: 'Free', color: '#4CAF50', icon: '🎁' };
@@ -153,18 +151,19 @@ export default function ShopScreen({ navigation }) {
                 accessibilityLabel={`${pot.name}, ${pot.price} coins${isOwned ? ', owned' : ''}`}
             >
                 <View style={styles.potDisplay}>
-                    <View style={[
-                        styles.potImageContainer,
-                        { backgroundColor: getPotColor(pot.id) },
-                        isOwned && styles.potImageOwned
-                    ]}>
-                        <Text style={styles.potEmoji}>🪴</Text>
-                        {isOwned && (
-                            <View style={styles.ownedOverlay}>
-                                <Text style={styles.ownedIcon}>✓</Text>
-                            </View>
-                        )}
-                    </View>
+                    <Image
+                        source={getPotImageDirect(pot.id)}
+                        style={[
+                            styles.potImage,
+                            isOwned && styles.potImageOwned
+                        ]}
+                        resizeMode="contain"
+                    />
+                    {isOwned && (
+                        <View style={styles.ownedOverlay}>
+                            <Text style={styles.ownedIcon}>✓</Text>
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.potInfo}>
@@ -218,7 +217,7 @@ export default function ShopScreen({ navigation }) {
                 )}
             </TouchableOpacity>
         );
-    }, [unlockedPots, canAffordPot, getPotColor, getPotRarity, showPotDetails, handleBuyPot]);
+    }, [unlockedPots, canAffordPot, getPotImageDirect, getPotRarity, showPotDetails, handleBuyPot]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -303,7 +302,8 @@ export default function ShopScreen({ navigation }) {
                                     • Complete challenges to earn more coins{'\n'}
                                     • Different pots have different rarities{'\n'}
                                     • Collect flowers to fill your new pots{'\n'}
-                                    • Legendary pots are the most exclusive!
+                                    • Each pot type changes how your flowers look{'\n'}
+                                    • Free pots are perfect for starting your collection!
                                 </Text>
                             </View>
                         </View>
@@ -344,12 +344,11 @@ export default function ShopScreen({ navigation }) {
                                 </View>
 
                                 <View style={styles.modalPotDisplay}>
-                                    <View style={[
-                                        styles.modalPotImage,
-                                        { backgroundColor: getPotColor(selectedPot.id) }
-                                    ]}>
-                                        <Text style={styles.modalPotEmoji}>🪴</Text>
-                                    </View>
+                                    <Image
+                                        source={getPotImageDirect(selectedPot.id)}
+                                        style={styles.modalPotImage}
+                                        resizeMode="contain"
+                                    />
                                 </View>
 
                                 <Text style={styles.modalPotName}>{selectedPot.name}</Text>
@@ -542,27 +541,19 @@ const styles = StyleSheet.create({
     },
     potDisplay: {
         marginRight: 15,
+        position: 'relative',
     },
-    potImageContainer: {
+    potImage: {
         width: 60,
         height: 60,
-        borderRadius: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 3,
-        borderColor: '#8B4513',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 3,
-        position: 'relative',
     },
     potImageOwned: {
-        borderColor: '#4CAF50',
-    },
-    potEmoji: {
-        fontSize: 28,
+        opacity: 0.8,
     },
     ownedOverlay: {
         position: 'absolute',
@@ -793,14 +784,11 @@ const styles = StyleSheet.create({
     modalPotImage: {
         width: 100,
         height: 100,
-        borderRadius: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 4,
-        borderColor: '#8B4513',
-    },
-    modalPotEmoji: {
-        fontSize: 50,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     modalPotName: {
         fontSize: 24,
