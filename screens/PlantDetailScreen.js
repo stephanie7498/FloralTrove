@@ -13,12 +13,24 @@ import { useAppState } from '../context/AppContext';
 export default function PlantDetailScreen({ route, navigation }) {
     const { coins } = useAppState();
 
+    // Enhanced debugging
+    console.log('PlantDetailScreen route params:', route?.params);
+
     // Defensive programming - check all route params
     const routeParams = route?.params || {};
     const { item, plant, pot } = routeParams;
 
+    console.log('Extracted params:', { item, plant, pot });
+
     // If any essential data is missing, show error screen
     if (!item || !plant || !pot) {
+        console.log('Missing data detected:', {
+            hasItem: !!item,
+            hasPlant: !!plant,
+            hasPot: !!pot,
+            routeParams
+        });
+
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
@@ -40,6 +52,8 @@ export default function PlantDetailScreen({ route, navigation }) {
                         {!item && 'Missing item data\n'}
                         {!plant && 'Missing plant data\n'}
                         {!pot && 'Missing pot data\n'}
+                        {'\n'}Debug info:{'\n'}
+                        Route params: {JSON.stringify(routeParams, null, 2)}
                     </Text>
                     <TouchableOpacity
                         style={styles.backToCollectionButton}
@@ -53,6 +67,15 @@ export default function PlantDetailScreen({ route, navigation }) {
     }
 
     const getPlantImageDirect = (plantId, potId = 'basic') => {
+        // For plant details, use GIFs to show beautiful animations
+        if (plantId === 'cornflower') {
+            return require('../assets/plantgifs/cornflower.gif');
+        }
+        if (plantId === 'poppy') {
+            return require('../assets/plantgifs/poppy.gif');
+        }
+
+        // Fallback to static images for daisy or if needed
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -375,16 +398,20 @@ const styles = StyleSheet.create({
     },
     plantImageWrapper: {
         backgroundColor: 'transparent',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowColor: '#4CAF50',
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
-        borderRadius: 10,
+        shadowRadius: 10,
+        elevation: 8,
+        borderRadius: 15,
+        borderWidth: 2,
+        borderColor: 'rgba(76, 175, 80, 0.2)',
+        padding: 5,
     },
     plantDetailImage: {
-        width: 150,
-        height: 180,
+        width: 170,
+        height: 200,
+        borderRadius: 15,
     },
     plantName: {
         fontSize: 28,

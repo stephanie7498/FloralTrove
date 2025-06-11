@@ -164,7 +164,7 @@ export default function ChallengesScreen({ navigation }) {
                                 <Text style={styles.flowerEmoji}>🌾</Text>
                                 <View style={styles.flowerInfo}>
                                     <Text style={styles.flowerName}>Cornflower</Text>
-                                    <Text style={styles.flowerDesc}>Blue wildflower - 40 coins</Text>
+                                    <Text style={styles.flowerDesc}>Blue wildflower - 40 coins (animated!)</Text>
                                 </View>
                             </View>
                             <View style={styles.flowerItem}>
@@ -178,7 +178,7 @@ export default function ChallengesScreen({ navigation }) {
                                 <Text style={styles.flowerEmoji}>🌺</Text>
                                 <View style={styles.flowerInfo}>
                                     <Text style={styles.flowerName}>Poppy</Text>
-                                    <Text style={styles.flowerDesc}>Vibrant red bloom - 75 coins</Text>
+                                    <Text style={styles.flowerDesc}>Vibrant red bloom - 75 coins (animated!)</Text>
                                 </View>
                             </View>
                         </View>
@@ -190,6 +190,7 @@ export default function ChallengesScreen({ navigation }) {
                             • Find flowers in your garden or local park{'\n'}
                             • 90% success rate when scanning flowers{'\n'}
                             • Each flower can only be collected once{'\n'}
+                            • Cornflowers and Poppies have special animations!{'\n'}
                             • Poppies are worth the most coins (75){'\n'}
                             • Use your coins to buy beautiful new pots{'\n'}
                             • Complete challenges for bonus coin rewards!{'\n'}

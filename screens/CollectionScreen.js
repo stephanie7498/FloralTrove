@@ -19,6 +19,11 @@ export default function CollectionScreen({ navigation }) {
     const plants = getPlantData();
     const pots = getPotData();
 
+    // Debug logging
+    console.log('CollectionScreen - Collection:', collection);
+    console.log('CollectionScreen - Plants data:', plants);
+    console.log('CollectionScreen - Pots data:', pots);
+
     const getPotImageDirect = (potId) => {
         const imageMap = {
             basic: require('../assets/images/pots/basic_pot.png'),
@@ -29,6 +34,7 @@ export default function CollectionScreen({ navigation }) {
     };
 
     const getPlantImageDirect = (plantId, potId = 'basic') => {
+        // For collection display, always use static images with pot types to show pot variations
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -75,20 +81,39 @@ export default function CollectionScreen({ navigation }) {
         const plant = plants.find(p => p.id === item.plantId);
         const pot = pots.find(p => p.id === item.potId);
 
-        if (!plant || !pot) return null;
+        if (!plant || !pot) {
+            console.log('Missing plant or pot data:', { plant, pot, item });
+            return null;
+        }
 
         return (
             <TouchableOpacity
                 key={item.id}
                 style={styles.plantContainer}
                 onPress={() => {
-                    if (item && plant && pot) {
-                        navigation.navigate('PlantDetail', {
-                            item: item,
-                            plant: plant,
-                            pot: pot
-                        });
-                    }
+                    console.log('Navigating to PlantDetail with:', { item, plant, pot });
+                    navigation.navigate('PlantDetail', {
+                        item: {
+                            id: item.id,
+                            plantId: item.plantId,
+                            potId: item.potId,
+                            discoveredAt: item.discoveredAt
+                        },
+                        plant: {
+                            id: plant.id,
+                            name: plant.name,
+                            description: plant.description,
+                            rarity: plant.rarity,
+                            coins: plant.coins,
+                            emoji: plant.emoji
+                        },
+                        pot: {
+                            id: pot.id,
+                            name: pot.name,
+                            description: pot.description,
+                            price: pot.price
+                        }
+                    });
                 }}
             >
                 <View style={styles.plantImageContainer}>
@@ -216,7 +241,8 @@ export default function CollectionScreen({ navigation }) {
                                     • Buy new pots in the shop{'\n'}
                                     • Use "Change All Pots" to switch pot styles{'\n'}
                                     • Complete challenges to unlock new pots{'\n'}
-                                    • Each flower type has different coin values
+                                    • Each flower type has different coin values{'\n'}
+                                    • Some flowers have special animations in details!
                                 </Text>
                             </View>
                         </>
@@ -571,8 +597,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     plantInPotImage: {
-        width: 80,
-        height: 100,
+        width: 85,
+        height: 105,
+        borderRadius: 8,
     },
     emptyPot: {
         alignItems: 'center',

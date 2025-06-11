@@ -24,6 +24,15 @@ export default function CameraScreen({ navigation }) {
     const { addPlantToCollection, getPlantData } = useAppActions();
 
     const getPlantImageDirect = (plantId, potId = 'basic') => {
+        // For the found modal, prioritize GIFs to show animations
+        if (plantId === 'cornflower') {
+            return require('../assets/plantgifs/cornflower.gif');
+        }
+        if (plantId === 'poppy') {
+            return require('../assets/plantgifs/poppy.gif');
+        }
+
+        // Fallback to static images for daisy or if needed
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -245,12 +254,12 @@ export default function CameraScreen({ navigation }) {
                         <Text style={styles.instructionsText}>
                             Point your camera at a flower and snap a picture{'\n\n'}
                             Discover beautiful flowers like:{'\n'}
-                            🌾 Cornflowers - Blue wildflowers{'\n'}
+                            🌾 Cornflowers - Blue wildflowers (animated!){'\n'}
                             🌼 Daisies - White with yellow centers{'\n'}
-                            🌺 Poppies - Vibrant red blooms{'\n\n'}
+                            🌺 Poppies - Vibrant red blooms (animated!){'\n\n'}
                             You can collect each flower only once!{'\n'}
                             Higher success rate - 90% chance to find flowers!{'\n'}
-                            Complete challenges to earn coins!{'\n\n'}
+                            Some special flowers have animations!{'\n\n'}
                             Have fun exploring! 🌸
                         </Text>
                         <TouchableOpacity
@@ -487,12 +496,20 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         backgroundColor: '#F8F8F8',
         borderRadius: 20,
-        padding: 15,
+        padding: 25,
         alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#4CAF50',
+        shadowColor: '#4CAF50',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 8,
     },
     modalPlantImage: {
-        width: 120,
-        height: 140,
+        width: 140,
+        height: 160,
+        borderRadius: 15,
     },
     coinReward: {
         backgroundColor: '#FFA500',
