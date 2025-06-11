@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Image,
+    Modal,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -11,13 +12,22 @@ import {
 import { useAppActions, useAppState } from '../context/AppContext';
 
 export default function CollectionScreen({ navigation }) {
-    const { collection, coins } = useAppState();
-    const { getPlantData, getPotData } = useAppActions();
+    const { collection, coins, unlockedPots } = useAppState();
+    const { getPlantData, getPotData, changeAllPots } = useAppActions();
+    const [showPotSelector, setShowPotSelector] = useState(false);
 
     const plants = getPlantData();
     const pots = getPotData();
 
-    // Direct image mapping for plants
+    const getPotImageDirect = (potId) => {
+        const imageMap = {
+            basic: require('../assets/images/pots/basic_pot.png'),
+            round: require('../assets/images/pots/round_pot.png'),
+        };
+
+        return imageMap[potId] || imageMap['basic'];
+    };
+
     const getPlantImageDirect = (plantId, potId = 'basic') => {
         const imageMap = {
             cornflower: {
@@ -38,12 +48,10 @@ export default function CollectionScreen({ navigation }) {
             return imageMap[plantId][potId];
         }
 
-        // Fallback to basic pot if round not available
         if (imageMap[plantId] && imageMap[plantId]['basic']) {
             return imageMap[plantId]['basic'];
         }
 
-        // Ultimate fallback - return a default image or null
         return null;
     };
 
@@ -58,6 +66,11 @@ export default function CollectionScreen({ navigation }) {
         return shelves;
     };
 
+    const handleChangePots = (newPotId) => {
+        changeAllPots(newPotId);
+        setShowPotSelector(false);
+    };
+
     const renderPlantInPot = (item) => {
         const plant = plants.find(p => p.id === item.plantId);
         const pot = pots.find(p => p.id === item.potId);
@@ -68,13 +81,23 @@ export default function CollectionScreen({ navigation }) {
             <TouchableOpacity
                 key={item.id}
                 style={styles.plantContainer}
-                onPress={() => navigation.navigate('PlantDetail', { item, plant, pot })}
+                onPress={() => {
+                    if (item && plant && pot) {
+                        navigation.navigate('PlantDetail', {
+                            item: item,
+                            plant: plant,
+                            pot: pot
+                        });
+                    }
+                }}
             >
-                <Image
-                    source={getPlantImageDirect(item.plantId, item.potId)}
-                    style={styles.plantInPotImage}
-                    resizeMode="contain"
-                />
+                <View style={styles.plantImageContainer}>
+                    <Image
+                        source={getPlantImageDirect(item.plantId, item.potId)}
+                        style={styles.plantInPotImage}
+                        resizeMode="contain"
+                    />
+                </View>
             </TouchableOpacity>
         );
     };
@@ -103,6 +126,9 @@ export default function CollectionScreen({ navigation }) {
     );
 
     const shelves = getShelfItems();
+    const currentPotName = collection.length > 0 ?
+        pots.find(p => p.id === collection[0].potId)?.name || 'Basic Clay Pot' :
+        'Basic Clay Pot';
 
     return (
         <SafeAreaView style={styles.container}>
@@ -136,6 +162,19 @@ export default function CollectionScreen({ navigation }) {
                     <Text style={styles.statsText}>{collection.length} plants collected</Text>
                 </View>
             </View>
+
+            {collection.length > 0 && unlockedPots.length > 1 && (
+                <View style={styles.potSelectorSection}>
+                    <Text style={styles.potSelectorLabel}>Current pot style: {currentPotName}</Text>
+                    <TouchableOpacity
+                        style={styles.changePotButton}
+                        onPress={() => setShowPotSelector(true)}
+                    >
+                        <Text style={styles.changePotIcon}>🔄</Text>
+                        <Text style={styles.changePotText}>Change All Pots</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
@@ -174,7 +213,8 @@ export default function CollectionScreen({ navigation }) {
                                 <Text style={styles.tipsTitle}>💡 Collection Tips</Text>
                                 <Text style={styles.tipsText}>
                                     • Tap any plant to see detailed information{'\n'}
-                                    • Collect flowers in different pot types{'\n'}
+                                    • Buy new pots in the shop{'\n'}
+                                    • Use "Change All Pots" to switch pot styles{'\n'}
                                     • Complete challenges to unlock new pots{'\n'}
                                     • Each flower type has different coin values
                                 </Text>
@@ -203,6 +243,64 @@ export default function CollectionScreen({ navigation }) {
                     </TouchableOpacity>
                 )}
             </View>
+
+            <Modal
+                visible={showPotSelector}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowPotSelector(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Choose Pot Style</Text>
+                            <TouchableOpacity
+                                style={styles.closeButton}
+                                onPress={() => setShowPotSelector(false)}
+                            >
+                                <Text style={styles.closeButtonText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.modalSubtitle}>
+                            This will change all plants in your collection to the selected pot style.
+                        </Text>
+
+                        <View style={styles.potOptions}>
+                            {unlockedPots.map(potId => {
+                                const pot = pots.find(p => p.id === potId);
+                                if (!pot) return null;
+
+                                const isCurrentPot = collection.length > 0 && collection[0].potId === potId;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={potId}
+                                        style={[
+                                            styles.potOption,
+                                            isCurrentPot && styles.potOptionSelected
+                                        ]}
+                                        onPress={() => handleChangePots(potId)}
+                                        disabled={isCurrentPot}
+                                    >
+                                        <View style={styles.potPreviewContainer}>
+                                            <Image
+                                                source={getPotImageDirect(potId)}
+                                                style={styles.potPreviewImage}
+                                                resizeMode="contain"
+                                            />
+                                        </View>
+                                        <Text style={styles.potOptionName}>{pot.name}</Text>
+                                        {isCurrentPot && (
+                                            <Text style={styles.currentPotLabel}>Current</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -236,6 +334,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backIcon: {
         fontSize: 20,
@@ -312,6 +415,39 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#2E7D32',
         fontWeight: '600',
+    },
+    potSelectorSection: {
+        backgroundColor: '#fff',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E8E8E8',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    potSelectorLabel: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '500',
+        flex: 1,
+    },
+    changePotButton: {
+        backgroundColor: '#FF9800',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    changePotIcon: {
+        fontSize: 14,
+        marginRight: 5,
+    },
+    changePotText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#fff',
     },
     scrollView: {
         flex: 1,
@@ -403,11 +539,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#8B4513',
         borderRadius: 9,
         zIndex: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 4,
         borderTopWidth: 2,
         borderTopColor: '#A0522D',
         borderBottomWidth: 2,
@@ -421,10 +552,6 @@ const styles = StyleSheet.create({
         height: 25,
         backgroundColor: '#654321',
         borderRadius: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
     },
     shelfSupportRight: {
         position: 'absolute',
@@ -434,24 +561,18 @@ const styles = StyleSheet.create({
         height: 25,
         backgroundColor: '#654321',
         borderRadius: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: -2, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
     },
     plantContainer: {
         alignItems: 'center',
         zIndex: 3,
         marginHorizontal: 5,
     },
+    plantImageContainer: {
+        backgroundColor: 'transparent',
+    },
     plantInPotImage: {
         width: 80,
         height: 100,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
     },
     emptyPot: {
         alignItems: 'center',
@@ -505,11 +626,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#E8E8E8',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
         gap: 15,
     },
     actionButton: {
@@ -539,5 +655,88 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 30,
+        borderRadius: 25,
+        width: '90%',
+        maxWidth: 400,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#2E7D32',
+    },
+    closeButton: {
+        backgroundColor: '#f0f0f0',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#666',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 25,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    potOptions: {
+        gap: 15,
+    },
+    potOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F8F8',
+        padding: 15,
+        borderRadius: 15,
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+    potOptionSelected: {
+        backgroundColor: '#E8F5E8',
+        borderColor: '#4CAF50',
+    },
+    potPreviewContainer: {
+        marginRight: 15,
+    },
+    potPreviewImage: {
+        width: 40,
+        height: 40,
+    },
+    potOptionName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2E7D32',
+        flex: 1,
+    },
+    currentPotLabel: {
+        fontSize: 12,
+        color: '#4CAF50',
+        fontWeight: 'bold',
+        backgroundColor: '#E8F5E8',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
     },
 });

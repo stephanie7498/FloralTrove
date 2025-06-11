@@ -17,25 +17,21 @@ export default function ShopScreen({ navigation }) {
     const [selectedPot, setSelectedPot] = useState(null);
     const [showPotModal, setShowPotModal] = useState(false);
 
-    // Optimized context usage
     const { coins, unlockedPots } = useAppState();
     const { buyPot, getPotData } = useAppActions();
     const { canAffordPot } = useAppSelectors();
 
-    // Direct image mapping for pots
     const getPotImageDirect = (potId) => {
         const imageMap = {
             basic: require('../assets/images/pots/basic_pot.png'),
             round: require('../assets/images/pots/round_pot.png'),
         };
 
-        return imageMap[potId] || imageMap['basic']; // fallback to basic pot
+        return imageMap[potId] || imageMap['basic'];
     };
 
-    // Memoize pot data to prevent unnecessary recalculations
     const pots = useMemo(() => getPotData(), [getPotData]);
 
-    // Separate available and owned pots
     const { availablePotsList, ownedPotsList } = useMemo(() => {
         const available = pots.filter(pot => !unlockedPots.includes(pot.id));
         const owned = pots.filter(pot => unlockedPots.includes(pot.id));
@@ -45,7 +41,6 @@ export default function ShopScreen({ navigation }) {
         };
     }, [pots, unlockedPots]);
 
-    // Calculate shop statistics
     const shopStats = useMemo(() => {
         const totalPots = pots.length;
         const ownedCount = unlockedPots.length;
@@ -55,7 +50,6 @@ export default function ShopScreen({ navigation }) {
         return { totalPots, ownedCount, availableCount, completionPercentage };
     }, [pots, unlockedPots]);
 
-    // Navigation callbacks
     const navigateBack = useCallback(() => {
         navigation.goBack();
     }, [navigation]);
@@ -64,7 +58,6 @@ export default function ShopScreen({ navigation }) {
         navigation.navigate('Challenges');
     }, [navigation]);
 
-    // Handle pot purchase with improved UX
     const handleBuyPot = useCallback(async (pot) => {
         if (unlockedPots.includes(pot.id)) {
             Alert.alert("Already Owned", "You already own this pot!");
@@ -116,7 +109,6 @@ export default function ShopScreen({ navigation }) {
         );
     }, [unlockedPots, canAffordPot, coins, buyPot, navigateToChallenges]);
 
-    // Show pot details modal
     const showPotDetails = useCallback((pot) => {
         setSelectedPot(pot);
         setShowPotModal(true);
@@ -127,7 +119,6 @@ export default function ShopScreen({ navigation }) {
         setSelectedPot(null);
     }, []);
 
-    // Get pot rarity indicator
     const getPotRarity = useCallback((price) => {
         if (price === 0) return { rarity: 'Free', color: '#4CAF50', icon: '🎁' };
         if (price <= 500) return { rarity: 'Common', color: '#2196F3', icon: '⭐' };
@@ -151,14 +142,16 @@ export default function ShopScreen({ navigation }) {
                 accessibilityLabel={`${pot.name}, ${pot.price} coins${isOwned ? ', owned' : ''}`}
             >
                 <View style={styles.potDisplay}>
-                    <Image
-                        source={getPotImageDirect(pot.id)}
-                        style={[
-                            styles.potImage,
-                            isOwned && styles.potImageOwned
-                        ]}
-                        resizeMode="contain"
-                    />
+                    <View style={styles.potImageWrapper}>
+                        <Image
+                            source={getPotImageDirect(pot.id)}
+                            style={[
+                                styles.potImage,
+                                isOwned && styles.potImageOwned
+                            ]}
+                            resizeMode="contain"
+                        />
+                    </View>
                     {isOwned && (
                         <View style={styles.ownedOverlay}>
                             <Text style={styles.ownedIcon}>✓</Text>
@@ -246,7 +239,6 @@ export default function ShopScreen({ navigation }) {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Shop Statistics */}
                     <View style={styles.statsContainer}>
                         <View style={styles.statItem}>
                             <Text style={styles.statNumber}>{shopStats.ownedCount}</Text>
@@ -264,7 +256,6 @@ export default function ShopScreen({ navigation }) {
 
                     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                         <View style={styles.content}>
-                            {/* Available Pots Section */}
                             {availablePotsList.length > 0 && (
                                 <View style={styles.section}>
                                     <Text style={styles.sectionTitle}>🛒 Available Pots</Text>
@@ -274,7 +265,6 @@ export default function ShopScreen({ navigation }) {
                                 </View>
                             )}
 
-                            {/* Owned Pots Section */}
                             {ownedPotsList.length > 0 && (
                                 <View style={styles.section}>
                                     <Text style={styles.sectionTitle}>✅ Your Collection</Text>
@@ -284,7 +274,6 @@ export default function ShopScreen({ navigation }) {
                                 </View>
                             )}
 
-                            {/* Shop Complete Message */}
                             {availablePotsList.length === 0 && (
                                 <View style={styles.completionContainer}>
                                     <Text style={styles.completionTitle}>🎉 Collection Complete!</Text>
@@ -295,7 +284,6 @@ export default function ShopScreen({ navigation }) {
                                 </View>
                             )}
 
-                            {/* Tips Section */}
                             <View style={styles.tipContainer}>
                                 <Text style={styles.tipTitle}>💡 Shopping Tips</Text>
                                 <Text style={styles.tipText}>
@@ -321,7 +309,6 @@ export default function ShopScreen({ navigation }) {
                 </View>
             </ImageBackground>
 
-            {/* Pot Details Modal */}
             <Modal
                 visible={showPotModal}
                 transparent={true}
@@ -344,11 +331,13 @@ export default function ShopScreen({ navigation }) {
                                 </View>
 
                                 <View style={styles.modalPotDisplay}>
-                                    <Image
-                                        source={getPotImageDirect(selectedPot.id)}
-                                        style={styles.modalPotImage}
-                                        resizeMode="contain"
-                                    />
+                                    <View style={styles.modalImageWrapper}>
+                                        <Image
+                                            source={getPotImageDirect(selectedPot.id)}
+                                            style={styles.modalPotImage}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
                                 </View>
 
                                 <Text style={styles.modalPotName}>{selectedPot.name}</Text>
@@ -439,6 +428,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backText: {
         fontSize: 22,
@@ -543,14 +537,13 @@ const styles = StyleSheet.create({
         marginRight: 15,
         position: 'relative',
     },
+    potImageWrapper: {
+        backgroundColor: 'transparent',
+        borderRadius: 10,
+    },
     potImage: {
         width: 60,
         height: 60,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
     },
     potImageOwned: {
         opacity: 0.8,
@@ -680,6 +673,11 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         borderWidth: 2,
         borderColor: '#4CAF50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
     },
     completionTitle: {
         fontSize: 22,
@@ -700,6 +698,11 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         borderLeftWidth: 4,
         borderLeftColor: '#4A90E2',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     tipTitle: {
         fontSize: 18,
@@ -741,7 +744,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
-    // Modal Styles
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -771,6 +773,11 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     closeButtonText: {
         fontSize: 20,
@@ -781,14 +788,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 20,
     },
-    modalPotImage: {
-        width: 100,
-        height: 100,
+    modalImageWrapper: {
+        backgroundColor: 'transparent',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 5,
+        borderRadius: 10,
+    },
+    modalPotImage: {
+        width: 100,
+        height: 100,
     },
     modalPotName: {
         fontSize: 24,
@@ -848,6 +859,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderColor: '#4CAF50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     modalOwnedText: {
         color: '#2E7D32',

@@ -10,13 +10,9 @@ import {
 import { useAppSelectors, useAppState } from '../context/AppContext';
 
 export default function ChallengesScreen({ navigation }) {
-    // Optimized context usage - only state that's needed
     const { coins, challenges } = useAppState();
-
-    // Use selectors for computed values
     const { activeChallenges, completedChallenges: completedCount } = useAppSelectors();
 
-    // Memoized calculations
     const challengeStats = useMemo(() => {
         const total = challenges.length;
         const completed = challenges.filter(c => c.completed).length;
@@ -27,7 +23,6 @@ export default function ChallengesScreen({ navigation }) {
         return { total, completed, totalReward };
     }, [challenges]);
 
-    // Memoized navigation functions
     const navigateBack = useCallback(() => {
         navigation.goBack();
     }, [navigation]);
@@ -129,7 +124,6 @@ export default function ChallengesScreen({ navigation }) {
                 <View style={styles.content}>
                     <Text style={styles.subtitle}>Complete challenges to earn coins!</Text>
 
-                    {/* Challenge Statistics */}
                     <View style={styles.statsContainer}>
                         <View style={styles.statCard}>
                             <Text style={styles.statNumber}>{challengeStats.completed}</Text>
@@ -145,7 +139,6 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     </View>
 
-                    {/* Active Challenges */}
                     {activeChallenges.length > 0 && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>🎯 Active Challenges</Text>
@@ -155,7 +148,6 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     )}
 
-                    {/* Completed Challenges */}
                     {completedCount > 0 && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>✅ Completed Challenges</Text>
@@ -165,7 +157,6 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     )}
 
-                    {/* Collection Guide */}
                     <View style={styles.guideContainer}>
                         <Text style={styles.guideTitle}>🌸 Flower Collection Guide</Text>
                         <View style={styles.flowerGuide}>
@@ -193,20 +184,19 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     </View>
 
-                    {/* Tips Section */}
                     <View style={styles.tipContainer}>
                         <Text style={styles.tipTitle}>💡 Pro Tips</Text>
                         <Text style={styles.tipText}>
                             • Find flowers in your garden or local park{'\n'}
-                            • Different flowers give different coin rewards{'\n'}
-                            • Rare flowers like poppies are worth more coins{'\n'}
+                            • 90% success rate when scanning flowers{'\n'}
+                            • Each flower can only be collected once{'\n'}
+                            • Poppies are worth the most coins (75){'\n'}
                             • Use your coins to buy beautiful new pots{'\n'}
                             • Complete challenges for bonus coin rewards!{'\n'}
                             • Take photos in good lighting for better recognition
                         </Text>
                     </View>
 
-                    {/* Motivation Section */}
                     {activeChallenges.length === 0 && completedCount === challenges.length && (
                         <View style={styles.motivationContainer}>
                             <Text style={styles.motivationTitle}>🏆 All Challenges Complete!</Text>
@@ -262,6 +252,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backText: {
         fontSize: 22,

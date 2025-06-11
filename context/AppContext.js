@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useMemo, useReducer } from 'react';
 
-// Initial state
 const initialState = {
-    coins: 100, // Starting coins
+    coins: 100,
     collection: [],
     challenges: [
         {
@@ -46,55 +45,37 @@ const initialState = {
             completed: false
         }
     ],
-    unlockedPots: ['basic'], // Start with basic pot
+    unlockedPots: ['basic'],
     activePotType: 'basic'
 };
 
-// Plant data
 const plantData = [
     {
-        id: 'lily_valley',
-        name: 'Lily of the Valley',
-        description: 'A delicate spring flower with bell-shaped white blooms and a sweet fragrance.',
-        rarity: 'uncommon',
-        coins: 75,
-        emoji: '🔔'
-    },
-    {
-        id: 'rose',
-        name: 'Rose',
-        description: 'The classic symbol of love and beauty, with layered petals and thorny stems.',
+        id: 'cornflower',
+        name: 'Cornflower',
+        description: 'A beautiful blue wildflower, also known as Bachelor\'s Button. Native to Europe and traditionally a symbol of delicacy and grace.',
         rarity: 'common',
-        coins: 50,
-        emoji: '🌹'
+        coins: 40,
+        emoji: '🌾'
     },
     {
         id: 'daisy',
         name: 'Daisy',
-        description: 'A cheerful white flower with a bright yellow center, symbolizing innocence.',
+        description: 'A cheerful white flower with a bright yellow center, symbolizing innocence and purity. The name comes from "day\'s eye".',
         rarity: 'common',
-        coins: 40,
+        coins: 50,
         emoji: '🌼'
     },
     {
-        id: 'sunflower',
-        name: 'Sunflower',
-        description: 'A tall, bright yellow flower that follows the sun across the sky.',
+        id: 'poppy',
+        name: 'Poppy',
+        description: 'A vibrant red bloom that\'s a symbol of remembrance and peace. These flowers are short-lived but spectacular.',
         rarity: 'uncommon',
-        coins: 80,
-        emoji: '🌻'
-    },
-    {
-        id: 'tulip',
-        name: 'Tulip',
-        description: 'An elegant spring bulb flower with cup-shaped blooms in many colors.',
-        rarity: 'rare',
-        coins: 120,
-        emoji: '🌷'
+        coins: 75,
+        emoji: '🌺'
     }
 ];
 
-// Pot data
 const potData = [
     {
         id: 'basic',
@@ -104,29 +85,14 @@ const potData = [
         unlocked: true
     },
     {
-        id: 'decorative',
-        name: 'Decorative Ceramic Pot',
-        description: 'A beautiful glazed ceramic pot with elegant patterns.',
+        id: 'round',
+        name: 'Round Ceramic Pot',
+        description: 'A beautiful round ceramic pot with smooth curves and elegant design.',
         price: 200,
-        unlocked: false
-    },
-    {
-        id: 'premium',
-        name: 'Premium Garden Pot',
-        description: 'A high-quality pot with drainage holes and decorative rim.',
-        price: 500,
-        unlocked: false
-    },
-    {
-        id: 'deluxe',
-        name: 'Deluxe Designer Pot',
-        description: 'An exclusive designer pot with gold accents and perfect craftsmanship.',
-        price: 1000,
         unlocked: false
     }
 ];
 
-// Action types
 const actionTypes = {
     ADD_PLANT: 'ADD_PLANT',
     ADD_COINS: 'ADD_COINS',
@@ -138,12 +104,17 @@ const actionTypes = {
     CHANGE_ALL_POTS: 'CHANGE_ALL_POTS'
 };
 
-// Reducer
 function appReducer(state, action) {
     switch (action.type) {
         case actionTypes.ADD_PLANT: {
             const plant = plantData.find(p => p.id === action.plantId);
             if (!plant) return state;
+
+            // Check if plant is already in collection
+            const plantAlreadyExists = state.collection.some(item => item.plantId === action.plantId);
+            if (plantAlreadyExists) {
+                return state; // Don't add duplicate plants
+            }
 
             const newItem = {
                 id: Date.now().toString(),
@@ -152,7 +123,6 @@ function appReducer(state, action) {
                 discoveredAt: new Date().toISOString()
             };
 
-            // Update challenges
             const updatedChallenges = state.challenges.map(challenge => {
                 if (!challenge.completed) {
                     const newProgress = challenge.progress + 1;
@@ -166,7 +136,6 @@ function appReducer(state, action) {
                 return challenge;
             });
 
-            // Calculate coins to add (plant coins + completed challenge rewards)
             let coinsToAdd = plant.coins;
             const newlyCompletedChallenges = updatedChallenges.filter(
                 (challenge, index) =>
@@ -228,18 +197,14 @@ function appReducer(state, action) {
     }
 }
 
-// Create contexts
 const AppStateContext = createContext();
 const AppDispatchContext = createContext();
 
-// Provider component
 export function AppProvider({ children }) {
     const [state, dispatch] = useReducer(appReducer, initialState);
 
-    // Actions
     const actions = useMemo(() => ({
         addPlantToCollection: (plantId, potId) => {
-            // Check if plant exists
             const plant = plantData.find(p => p.id === plantId);
             if (!plant) return false;
 
@@ -313,18 +278,14 @@ export function AppProvider({ children }) {
         },
 
         getPotImage: (potId) => {
-            // Return pot emoji based on pot type
             const potEmojis = {
                 basic: '🪴',
-                decorative: '🏺',
-                premium: '🏺',
-                deluxe: '🏆'
+                round: '🏺'
             };
             return potEmojis[potId] || '🪴';
         }
     }), [state]);
 
-    // Selectors
     const selectors = useMemo(() => ({
         activeChallenges: state.challenges.filter(c => !c.completed),
         completedChallenges: state.challenges.filter(c => c.completed).length,
@@ -344,7 +305,6 @@ export function AppProvider({ children }) {
     );
 }
 
-// Hooks
 export function useAppState() {
     const context = useContext(AppStateContext);
     if (!context) {
@@ -369,7 +329,6 @@ export function useAppSelectors() {
     return context.selectors;
 }
 
-// Combined hook for backward compatibility
 export function useAppContext() {
     const state = useAppState();
     const { actions } = useAppActions();

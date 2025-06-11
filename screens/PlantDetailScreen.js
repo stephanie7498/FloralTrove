@@ -11,10 +11,47 @@ import {
 import { useAppState } from '../context/AppContext';
 
 export default function PlantDetailScreen({ route, navigation }) {
-    const { item, plant, pot } = route.params;
     const { coins } = useAppState();
 
-    // Direct image mapping for plants
+    // Defensive programming - check all route params
+    const routeParams = route?.params || {};
+    const { item, plant, pot } = routeParams;
+
+    // If any essential data is missing, show error screen
+    if (!item || !plant || !pot) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Text style={styles.backText}>←</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Plant Details</Text>
+                    <View style={styles.coinContainer}>
+                        <Text style={styles.coinIcon}>🪙</Text>
+                        <Text style={styles.coinText}>{coins}</Text>
+                    </View>
+                </View>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>
+                        No plant data found{'\n'}
+                        {!item && 'Missing item data\n'}
+                        {!plant && 'Missing plant data\n'}
+                        {!pot && 'Missing pot data\n'}
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.backToCollectionButton}
+                        onPress={() => navigation.navigate('Collection')}
+                    >
+                        <Text style={styles.backToCollectionText}>Back to Collection</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     const getPlantImageDirect = (plantId, potId = 'basic') => {
         const imageMap = {
             cornflower: {
@@ -35,12 +72,10 @@ export default function PlantDetailScreen({ route, navigation }) {
             return imageMap[plantId][potId];
         }
 
-        // Fallback to basic pot if round not available
         if (imageMap[plantId] && imageMap[plantId]['basic']) {
             return imageMap[plantId]['basic'];
         }
 
-        // Ultimate fallback - return a default image or null
         return null;
     };
 
@@ -96,22 +131,6 @@ export default function PlantDetailScreen({ route, navigation }) {
                 "• Seeds are used in cooking and baking",
                 "• Can grow in poor soil conditions",
                 "• Attracts bees and other pollinators"
-            ],
-            lily_valley: [
-                "• Native to cool regions of Northern Hemisphere",
-                "• Blooms in late spring with sweet fragrance",
-                "• Symbol of humility and sweetness",
-                "• All parts of the plant are poisonous",
-                "• Used in traditional perfumery",
-                "• Prefers shaded woodland areas"
-            ],
-            rose: [
-                "• Over 300 species and thousands of cultivars",
-                "• Symbol of love and beauty across cultures",
-                "• Rose hips are rich in vitamin C",
-                "• Can live for over 100 years",
-                "• Used in perfumes, cosmetics, and cooking",
-                "• National flower of several countries"
             ]
         };
         return facts[plantId] || [
@@ -145,11 +164,13 @@ export default function PlantDetailScreen({ route, navigation }) {
                 <View style={styles.content}>
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
-                            <Image
-                                source={getPlantImageDirect(item.plantId, item.potId)}
-                                style={styles.plantDetailImage}
-                                resizeMode="contain"
-                            />
+                            <View style={styles.plantImageWrapper}>
+                                <Image
+                                    source={getPlantImageDirect(item.plantId, item.potId)}
+                                    style={styles.plantDetailImage}
+                                    resizeMode="contain"
+                                />
+                            </View>
                         </View>
                         <Text style={styles.plantName}>{plant.name}</Text>
                         <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(plant.rarity) }]}>
@@ -202,7 +223,6 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
-                    {/* Collection Progress */}
                     <View style={styles.progressSection}>
                         <Text style={styles.sectionTitle}>📊 Collection Progress</Text>
                         <View style={styles.progressContent}>
@@ -223,7 +243,6 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
-                    {/* Care Tips */}
                     <View style={styles.careSection}>
                         <Text style={styles.sectionTitle}>💡 Care Tips</Text>
                         <View style={styles.careTips}>
@@ -282,11 +301,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderBottomWidth: 1,
         borderBottomColor: '#E8E8E8',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
     },
     backButton: {
         width: 45,
@@ -297,6 +311,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     backText: {
         fontSize: 22,
@@ -354,14 +373,18 @@ const styles = StyleSheet.create({
     plantContainer: {
         marginBottom: 20,
     },
-    plantDetailImage: {
-        width: 150,
-        height: 180,
+    plantImageWrapper: {
+        backgroundColor: 'transparent',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 5,
+        borderRadius: 10,
+    },
+    plantDetailImage: {
+        width: 150,
+        height: 180,
     },
     plantName: {
         fontSize: 28,
@@ -567,11 +590,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#E8E8E8',
         gap: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
     },
     actionButton: {
         backgroundColor: '#4CAF50',
@@ -596,6 +614,34 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     actionButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    errorText: {
+        fontSize: 18,
+        color: '#666',
+        marginBottom: 30,
+        textAlign: 'center',
+    },
+    backToCollectionButton: {
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 30,
+        paddingVertical: 15,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    backToCollectionText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',

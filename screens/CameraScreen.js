@@ -20,10 +20,9 @@ export default function CameraScreen({ navigation }) {
     const [showInstructions, setShowInstructions] = useState(false);
     const [recognitionFailed, setRecognitionFailed] = useState(false);
 
-    const { coins } = useAppState();
+    const { collection } = useAppState();
     const { addPlantToCollection, getPlantData } = useAppActions();
 
-    // Direct image mapping for plants
     const getPlantImageDirect = (plantId, potId = 'basic') => {
         const imageMap = {
             cornflower: {
@@ -44,13 +43,15 @@ export default function CameraScreen({ navigation }) {
             return imageMap[plantId][potId];
         }
 
-        // Fallback to basic pot if round not available
         if (imageMap[plantId] && imageMap[plantId]['basic']) {
             return imageMap[plantId]['basic'];
         }
 
-        // Ultimate fallback - return a default image or null
         return null;
+    };
+
+    const getCollectedPlantIds = () => {
+        return collection.map(item => item.plantId);
     };
 
     const simulatePlantDetection = () => {
@@ -60,29 +61,41 @@ export default function CameraScreen({ navigation }) {
         setRecognitionFailed(false);
 
         setTimeout(() => {
-            const success = Math.random() > 0.3;
+            // Increased success rate from 70% to 90%
+            const success = Math.random() > 0.1;
             setIsProcessing(false);
 
             if (success) {
-                // Use actual plant IDs that match your images
                 const availablePlants = ['cornflower', 'daisy', 'poppy'];
-                const randomPlantId = availablePlants[Math.floor(Math.random() * availablePlants.length)];
+                const collectedPlantIds = getCollectedPlantIds();
+                const uncollectedPlants = availablePlants.filter(plantId => !collectedPlantIds.includes(plantId));
+
+                if (uncollectedPlants.length === 0) {
+                    setRecognitionFailed(true);
+                    return;
+                }
+
+                const randomPlantId = uncollectedPlants[Math.floor(Math.random() * uncollectedPlants.length)];
                 const plants = getPlantData();
                 const randomPlant = plants.find(p => p.id === randomPlantId);
 
-                const wasAdded = addPlantToCollection(randomPlantId);
+                if (randomPlant) {
+                    const wasAdded = addPlantToCollection(randomPlantId);
 
-                if (wasAdded && randomPlant) {
-                    setFoundPlant(randomPlant);
-                    setFoundPotId('basic'); // Default pot for display
-                    setShowFoundModal(true);
+                    if (wasAdded) {
+                        setFoundPlant(randomPlant);
+                        setFoundPotId('basic');
+                        setShowFoundModal(true);
+                    } else {
+                        setRecognitionFailed(true);
+                    }
                 } else {
                     setRecognitionFailed(true);
                 }
             } else {
                 setRecognitionFailed(true);
             }
-        }, 2000);
+        }, 1500); // Reduced time from 2000ms to 1500ms for faster response
     };
 
     const closeFoundModal = () => {
@@ -99,20 +112,12 @@ export default function CameraScreen({ navigation }) {
                 resizeMode="cover"
             >
                 <View style={styles.cameraOverlay}>
-                    {/* Top bar */}
                     <View style={styles.topBar}>
                         <TouchableOpacity
                             style={styles.backButton}
                             onPress={() => navigation.goBack()}
                         >
                             <Text style={styles.backText}>←</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.coinContainer}
-                            onPress={() => navigation.navigate('Shop')}
-                        >
-                            <Text style={styles.coinIcon}>🪙</Text>
-                            <Text style={styles.coinText}>{coins}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.infoButton}
@@ -122,7 +127,6 @@ export default function CameraScreen({ navigation }) {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Center viewfinder */}
                     <View style={styles.viewfinderContainer}>
                         <View style={styles.viewfinder}>
                             <View style={styles.viewfinderCorner} />
@@ -147,18 +151,31 @@ export default function CameraScreen({ navigation }) {
 
                         {recognitionFailed && (
                             <View style={styles.failureContainer}>
-                                <Text style={styles.failureTitle}>Cannot recognize flower.</Text>
-                                <TouchableOpacity
-                                    style={styles.tryAgainButton}
-                                    onPress={() => setRecognitionFailed(false)}
-                                >
-                                    <Text style={styles.tryAgainText}>Try again</Text>
-                                </TouchableOpacity>
+                                <Text style={styles.failureTitle}>
+                                    {getCollectedPlantIds().length >= 3 ?
+                                        "All flowers collected!" :
+                                        "Cannot recognize flower."
+                                    }
+                                </Text>
+                                {getCollectedPlantIds().length >= 3 ? (
+                                    <TouchableOpacity
+                                        style={styles.tryAgainButton}
+                                        onPress={() => navigation.navigate('Collection')}
+                                    >
+                                        <Text style={styles.tryAgainText}>View Collection</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.tryAgainButton}
+                                        onPress={() => setRecognitionFailed(false)}
+                                    >
+                                        <Text style={styles.tryAgainText}>Try again</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         )}
                     </View>
 
-                    {/* Bottom controls */}
                     <View style={styles.bottomControls}>
                         <TouchableOpacity
                             style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
@@ -172,7 +189,6 @@ export default function CameraScreen({ navigation }) {
                 </View>
             </ImageBackground>
 
-            {/* Found Plant Modal */}
             <Modal
                 visible={showFoundModal}
                 transparent={true}
@@ -217,7 +233,6 @@ export default function CameraScreen({ navigation }) {
                 </View>
             </Modal>
 
-            {/* Instructions Modal */}
             <Modal
                 visible={showInstructions}
                 transparent={true}
@@ -233,8 +248,9 @@ export default function CameraScreen({ navigation }) {
                             🌾 Cornflowers - Blue wildflowers{'\n'}
                             🌼 Daisies - White with yellow centers{'\n'}
                             🌺 Poppies - Vibrant red blooms{'\n\n'}
-                            Collect them in different pots and{'\n'}
-                            complete challenges to earn coins!{'\n\n'}
+                            You can collect each flower only once!{'\n'}
+                            Higher success rate - 90% chance to find flowers!{'\n'}
+                            Complete challenges to earn coins!{'\n\n'}
                             Have fun exploring! 🌸
                         </Text>
                         <TouchableOpacity
@@ -271,7 +287,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     backButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         width: 45,
         height: 45,
         borderRadius: 22.5,
@@ -288,31 +304,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
-    coinContainer: {
-        backgroundColor: 'rgba(255, 165, 0, 0.95)',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    coinIcon: {
-        fontSize: 16,
-        marginRight: 5,
-        color: '#fff',
-    },
-    coinText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
     infoButton: {
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderRadius: 20,
@@ -378,7 +371,7 @@ const styles = StyleSheet.create({
     },
     centerText: {
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
         paddingHorizontal: 20,
         paddingVertical: 15,
         borderRadius: 15,
@@ -394,7 +387,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         alignItems: 'center',
         gap: 15,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         paddingHorizontal: 30,
         paddingVertical: 20,
         borderRadius: 20,
@@ -407,7 +400,7 @@ const styles = StyleSheet.create({
     failureContainer: {
         position: 'absolute',
         alignItems: 'center',
-        backgroundColor: 'rgba(244, 67, 54, 0.9)',
+        backgroundColor: 'rgba(244, 67, 54, 0.95)',
         padding: 25,
         borderRadius: 20,
         gap: 15,
@@ -421,7 +414,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     tryAgainButton: {
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         paddingHorizontal: 25,
         paddingVertical: 12,
         borderRadius: 20,
@@ -436,7 +429,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     captureButton: {
-        backgroundColor: 'rgba(76, 175, 80, 0.95)',
+        backgroundColor: 'rgba(76, 175, 80, 0.98)',
         paddingHorizontal: 35,
         paddingVertical: 20,
         borderRadius: 30,
@@ -452,7 +445,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     captureButtonDisabled: {
-        backgroundColor: 'rgba(128, 128, 128, 0.7)',
+        backgroundColor: 'rgba(128, 128, 128, 0.8)',
         borderColor: 'rgba(255, 255, 255, 0.5)',
     },
     captureIcon: {
@@ -500,11 +493,6 @@ const styles = StyleSheet.create({
     modalPlantImage: {
         width: 120,
         height: 140,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
     },
     coinReward: {
         backgroundColor: '#FFA500',
