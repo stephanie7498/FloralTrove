@@ -20,14 +20,23 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.floratrove.app"
+      "bundleIdentifier": "com.floratrove.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to camera to take pictures of flowers for identification.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select flower images for identification."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#4a7c4a"
       },
-      "package": "com.floratrove.app"
+      "package": "com.floratrove.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     }
   }
 }

@@ -1,6 +1,8 @@
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Image,
     ImageBackground,
     Modal,
@@ -11,6 +13,7 @@ import {
     View
 } from 'react-native';
 import { useAppActions, useAppState } from '../context/AppContext';
+import PlantNetAPI from '../services/PlantNetAPI';
 
 export default function CameraScreen({ navigation }) {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -19,6 +22,7 @@ export default function CameraScreen({ navigation }) {
     const [foundPotId, setFoundPotId] = useState('basic');
     const [showInstructions, setShowInstructions] = useState(false);
     const [recognitionFailed, setRecognitionFailed] = useState(false);
+    const [identificationResult, setIdentificationResult] = useState(null);
 
     const { collection } = useAppState();
     const { addPlantToCollection, getPlantData } = useAppActions();
@@ -63,38 +67,146 @@ export default function CameraScreen({ navigation }) {
         return collection.map(item => item.plantId);
     };
 
-    const simulatePlantDetection = () => {
+    const takePictureAndIdentify = async () => {
         if (isProcessing) return;
+
+        try {
+            // Check if we're on simulator or device
+            const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+            const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            // Try camera first (for real devices)
+            if (cameraStatus === 'granted') {
+                // Show options: Camera or Photo Library
+                Alert.alert(
+                    "Select Photo Source",
+                    "Choose how you want to add a photo for plant identification:",
+                    [
+                        {
+                            text: "Take Photo",
+                            onPress: async () => {
+                                try {
+                                    const result = await ImagePicker.launchCameraAsync({
+                                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                        allowsEditing: true,
+                                        aspect: [1, 1],
+                                        quality: 0.8,
+                                    });
+                                    if (!result.canceled) {
+                                        processImage(result.assets[0].uri);
+                                    }
+                                } catch (error) {
+                                    // Camera failed (probably simulator), fall back to library
+                                    console.log('📱 Camera not available, using photo library...');
+                                    launchPhotoLibrary();
+                                }
+                            }
+                        },
+                        {
+                            text: "Choose from Library",
+                            onPress: () => launchPhotoLibrary()
+                        },
+                        {
+                            text: "Cancel",
+                            style: "cancel"
+                        }
+                    ]
+                );
+            } else if (libraryStatus === 'granted') {
+                // Only photo library available (simulator)
+                launchPhotoLibrary();
+            } else {
+                Alert.alert(
+                    'Permissions Required',
+                    'Please allow photo access to identify plants.',
+                    [{ text: 'OK' }]
+                );
+            }
+
+        } catch (error) {
+            console.error('❌ Error during image selection:', error);
+            Alert.alert(
+                'Error',
+                'Could not access camera or photo library. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
+    };
+
+    const launchPhotoLibrary = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                processImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('❌ Error launching photo library:', error);
+            Alert.alert(
+                'Error',
+                'Could not access photo library. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
+    };
+
+    const processImage = async (imageUri) => {
+        console.log('📸 Image selected:', imageUri);
+
+        // Request permission to send to PlantNet
+        const hasPermission = await PlantNetAPI.requestPermission();
+        if (!hasPermission) {
+            Alert.alert(
+                'Identification Cancelled',
+                'Photo was not sent for identification. You can try selecting another picture.',
+                [{ text: 'OK' }]
+            );
+            return;
+        }
 
         setIsProcessing(true);
         setRecognitionFailed(false);
+        setIdentificationResult(null);
 
-        setTimeout(() => {
-            // Increased success rate from 70% to 90%
-            const success = Math.random() > 0.1;
+        try {
+            // Identify plant using PlantNet API
+            console.log('🔍 Starting plant identification...');
+            const identificationResult = await PlantNetAPI.identifyPlant(imageUri, ['flower', 'leaf']);
+
+            setIdentificationResult(identificationResult);
             setIsProcessing(false);
 
-            if (success) {
-                const availablePlants = ['cornflower', 'daisy', 'poppy'];
+            if (identificationResult.success && identificationResult.plantId) {
+                // Check if plant is already collected
                 const collectedPlantIds = getCollectedPlantIds();
-                const uncollectedPlants = availablePlants.filter(plantId => !collectedPlantIds.includes(plantId));
-
-                if (uncollectedPlants.length === 0) {
-                    setRecognitionFailed(true);
+                if (collectedPlantIds.includes(identificationResult.plantId)) {
+                    Alert.alert(
+                        'Already Collected! 🌸',
+                        `You already have a ${identificationResult.plantId} in your collection!\n\nTry finding a different type of flower.`,
+                        [{ text: 'OK' }]
+                    );
                     return;
                 }
 
-                const randomPlantId = uncollectedPlants[Math.floor(Math.random() * uncollectedPlants.length)];
+                // Add plant to collection
                 const plants = getPlantData();
-                const randomPlant = plants.find(p => p.id === randomPlantId);
+                const plant = plants.find(p => p.id === identificationResult.plantId);
 
-                if (randomPlant) {
-                    const wasAdded = addPlantToCollection(randomPlantId);
+                if (plant) {
+                    const wasAdded = addPlantToCollection(identificationResult.plantId);
 
                     if (wasAdded) {
-                        setFoundPlant(randomPlant);
+                        setFoundPlant(plant);
                         setFoundPotId('basic');
                         setShowFoundModal(true);
+
+                        // Show success message with confidence
+                        console.log(`✅ Successfully identified: ${plant.name} (${identificationResult.confidence.toFixed(1)}% confidence)`);
                     } else {
                         setRecognitionFailed(true);
                     }
@@ -102,9 +214,49 @@ export default function CameraScreen({ navigation }) {
                     setRecognitionFailed(true);
                 }
             } else {
+                // Show detailed failure message
+                let failureMessage = 'Could not identify this plant.';
+
+                if (identificationResult.scientificName) {
+                    failureMessage = `Found "${identificationResult.scientificName}" but this plant is not in our collection yet.\n\nWe currently collect: Cornflowers, Daisies, and Poppies.`;
+                } else if (identificationResult.confidence > 0) {
+                    failureMessage = `Plant detected but confidence too low (${identificationResult.confidence.toFixed(1)}%).\n\nTry selecting a clearer photo with good lighting.`;
+                }
+
+                Alert.alert(
+                    'Plant Not Recognized 🔍',
+                    failureMessage,
+                    [
+                        { text: 'Try Again', style: 'default' },
+                        {
+                            text: 'View Collection Guide',
+                            style: 'default',
+                            onPress: () => setShowInstructions(true)
+                        }
+                    ]
+                );
                 setRecognitionFailed(true);
             }
-        }, 1500); // Reduced time from 2000ms to 1500ms for faster response
+
+        } catch (error) {
+            console.error('❌ Error during plant identification:', error);
+            setIsProcessing(false);
+
+            let errorMessage = 'Something went wrong during plant identification.';
+
+            if (error.message?.includes('network') || error.message?.includes('fetch')) {
+                errorMessage = 'Network error. Please check your internet connection and try again.';
+            } else if (error.message?.includes('API')) {
+                errorMessage = 'Plant identification service is temporarily unavailable. Please try again later.';
+            }
+
+            Alert.alert(
+                'Identification Failed',
+                errorMessage,
+                [{ text: 'OK' }]
+            );
+            setRecognitionFailed(true);
+        }
     };
 
     const closeFoundModal = () => {
@@ -145,8 +297,8 @@ export default function CameraScreen({ navigation }) {
 
                             {!isProcessing && !recognitionFailed && (
                                 <View style={styles.centerText}>
-                                    <Text style={styles.instructionText}>Point your camera at a</Text>
-                                    <Text style={styles.instructionText}>flower and snap a picture</Text>
+                                    <Text style={styles.instructionText}>Tap 'Select Photo' to take</Text>
+                                    <Text style={styles.instructionText}>or choose a flower image</Text>
                                 </View>
                             )}
                         </View>
@@ -154,7 +306,8 @@ export default function CameraScreen({ navigation }) {
                         {isProcessing && (
                             <View style={styles.processingContainer}>
                                 <ActivityIndicator size="large" color="#fff" />
-                                <Text style={styles.processingText}>Scanning...</Text>
+                                <Text style={styles.processingText}>Identifying plant...</Text>
+                                <Text style={styles.processingSubtext}>Using PlantNet AI 🤖</Text>
                             </View>
                         )}
 
@@ -188,11 +341,11 @@ export default function CameraScreen({ navigation }) {
                     <View style={styles.bottomControls}>
                         <TouchableOpacity
                             style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
-                            onPress={simulatePlantDetection}
+                            onPress={takePictureAndIdentify}
                             disabled={isProcessing}
                         >
-                            <Text style={styles.captureIcon}>📷</Text>
-                            <Text style={styles.captureText}>Take picture</Text>
+                            <Text style={styles.captureIcon}>📸</Text>
+                            <Text style={styles.captureText}>Select Photo</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -221,6 +374,13 @@ export default function CameraScreen({ navigation }) {
                         <View style={styles.coinReward}>
                             <Text style={styles.coinRewardText}>+{foundPlant?.coins} coins! 🪙</Text>
                         </View>
+                        {identificationResult && (
+                            <View style={styles.confidenceContainer}>
+                                <Text style={styles.confidenceText}>
+                                    🤖 AI Confidence: {identificationResult.confidence.toFixed(1)}%
+                                </Text>
+                            </View>
+                        )}
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
                                 style={styles.modalButton}
@@ -252,15 +412,25 @@ export default function CameraScreen({ navigation }) {
                     <View style={styles.instructionsContent}>
                         <Text style={styles.instructionsTitle}>How it works</Text>
                         <Text style={styles.instructionsText}>
-                            Point your camera at a flower and snap a picture{'\n\n'}
-                            Discover beautiful flowers like:{'\n'}
-                            🌾 Cornflowers - Blue wildflowers (animated!){'\n'}
+                            Take or select a clear photo of a flower for AI identification{'\n\n'}
+                            📸 How it works:{'\n'}
+                            • Tap 'Select Photo' to choose image source{'\n'}
+                            • Take new photo OR choose from library{'\n'}
+                            • Select a clear, well-lit flower image{'\n'}
+                            • We'll ask permission to identify it{'\n'}
+                            • PlantNet AI will identify the species{'\n\n'}
+                            🌸 We can find:{'\n'}
+                            🌾 Cornflowers - Blue wildflowers{'\n'}
                             🌼 Daisies - White with yellow centers{'\n'}
-                            🌺 Poppies - Vibrant red blooms (animated!){'\n\n'}
-                            You can collect each flower only once!{'\n'}
-                            Higher success rate - 90% chance to find flowers!{'\n'}
-                            Some special flowers have animations!{'\n\n'}
-                            Have fun exploring! 🌸
+                            🌺 Poppies - Vibrant red blooms{'\n\n'}
+                            💡 Tips for best results:{'\n'}
+                            • Use good lighting (natural light works best){'\n'}
+                            • Get close to the flower{'\n'}
+                            • Make sure the flower is clearly visible{'\n'}
+                            • Avoid blurry photos{'\n'}
+                            • Try different images if first attempt fails{'\n\n'}
+                            📱 Works on simulator: Choose photos from your library!{'\n\n'}
+                            🔒 Privacy: Your photo is sent to PlantNet (France) for identification. This helps botanical research!
                         </Text>
                         <TouchableOpacity
                             style={styles.okButton}
@@ -406,6 +576,12 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
+    processingSubtext: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '400',
+        opacity: 0.8,
+    },
     failureContainer: {
         position: 'absolute',
         alignItems: 'center',
@@ -516,12 +692,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 8,
         borderRadius: 15,
-        marginBottom: 25,
+        marginBottom: 15,
     },
     coinRewardText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    confidenceContainer: {
+        backgroundColor: '#E3F2FD',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        marginBottom: 25,
+    },
+    confidenceText: {
+        color: '#1976D2',
+        fontSize: 14,
+        fontWeight: '600',
     },
     modalButtons: {
         gap: 15,
@@ -558,6 +746,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 16,
         elevation: 8,
+        maxHeight: '80%',
     },
     instructionsTitle: {
         fontSize: 24,
@@ -566,10 +755,10 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     instructionsText: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#333',
-        textAlign: 'center',
-        lineHeight: 22,
+        textAlign: 'left',
+        lineHeight: 20,
         marginBottom: 30,
     },
     okButton: {
