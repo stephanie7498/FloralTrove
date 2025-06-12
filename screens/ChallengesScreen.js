@@ -181,6 +181,34 @@ export default function ChallengesScreen({ navigation }) {
                                     <Text style={styles.flowerDesc}>Vibrant red bloom - 75 coins (animated!)</Text>
                                 </View>
                             </View>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>🤍</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Bladder Campion</Text>
+                                    <Text style={styles.flowerDesc}>White with inflated sepals - 45 coins</Text>
+                                </View>
+                            </View>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>🌻</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Yellow Daisy</Text>
+                                    <Text style={styles.flowerDesc}>Bright yellow flowers - 55 coins</Text>
+                                </View>
+                            </View>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>💜</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Knapweed</Text>
+                                    <Text style={styles.flowerDesc}>Purple thistle-like flowers - 65 coins</Text>
+                                </View>
+                            </View>
+                            <View style={styles.flowerItem}>
+                                <Text style={styles.flowerEmoji}>🍀</Text>
+                                <View style={styles.flowerInfo}>
+                                    <Text style={styles.flowerName}>Red Clover</Text>
+                                    <Text style={styles.flowerDesc}>Red-purple clover flowers - 40 coins</Text>
+                                </View>
+                            </View>
                         </View>
                     </View>
 
@@ -192,9 +220,11 @@ export default function ChallengesScreen({ navigation }) {
                             • Each flower can only be collected once{'\n'}
                             • Cornflowers and Poppies have special animations!{'\n'}
                             • Poppies are worth the most coins (75){'\n'}
+                            • Knapweed is the second highest value (65 coins){'\n'}
                             • Use your coins to buy beautiful new pots{'\n'}
                             • Complete challenges for bonus coin rewards!{'\n'}
-                            • Take photos in good lighting for better recognition
+                            • Take photos in good lighting for better recognition{'\n'}
+                            • Collect all 7 flower types to complete your collection
                         </Text>
                     </View>
 

@@ -28,7 +28,7 @@ export default function CameraScreen({ navigation }) {
     const { addPlantToCollection, getPlantData } = useAppActions();
 
     const getPlantImageDirect = (plantId, potId = 'basic') => {
-        // For the found modal, prioritize GIFs to show animations
+        // For the found modal, prioritize GIFs for plants that have them
         if (plantId === 'cornflower') {
             return require('../assets/plantgifs/cornflower.gif');
         }
@@ -36,7 +36,7 @@ export default function CameraScreen({ navigation }) {
             return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Fallback to static images for daisy or if needed
+        // Use static images for existing plants only
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -50,6 +50,8 @@ export default function CameraScreen({ navigation }) {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
             }
+            // TODO: Add new plant images when they're properly added to the project:
+            // blaussilene, gele_ganzenbloem, knoopkruid, rode_klaver
         };
 
         if (imageMap[plantId] && imageMap[plantId][potId]) {
@@ -60,7 +62,8 @@ export default function CameraScreen({ navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        return null;
+        // Fallback for new plants - use a basic pot image
+        return require('../assets/images/pots/basic_pot.png');
     };
 
     const getCollectedPlantIds = () => {
@@ -218,7 +221,7 @@ export default function CameraScreen({ navigation }) {
                 let failureMessage = 'Could not identify this plant.';
 
                 if (identificationResult.scientificName) {
-                    failureMessage = `Found "${identificationResult.scientificName}" but this plant is not in our collection yet.\n\nWe currently collect: Cornflowers, Daisies, and Poppies.`;
+                    failureMessage = `Found "${identificationResult.scientificName}" but this plant is not in our collection yet.\n\nWe currently collect: Cornflowers, Daisies, Poppies, Bladder Campion, Yellow Daisy, Knapweed, and Red Clover.`;
                 } else if (identificationResult.confidence > 0) {
                     failureMessage = `Plant detected but confidence too low (${identificationResult.confidence.toFixed(1)}%).\n\nTry selecting a clearer photo with good lighting.`;
                 }
@@ -314,12 +317,12 @@ export default function CameraScreen({ navigation }) {
                         {recognitionFailed && (
                             <View style={styles.failureContainer}>
                                 <Text style={styles.failureTitle}>
-                                    {getCollectedPlantIds().length >= 3 ?
+                                    {getCollectedPlantIds().length >= 7 ?
                                         "All flowers collected!" :
                                         "Cannot recognize flower."
                                     }
                                 </Text>
-                                {getCollectedPlantIds().length >= 3 ? (
+                                {getCollectedPlantIds().length >= 7 ? (
                                     <TouchableOpacity
                                         style={styles.tryAgainButton}
                                         onPress={() => navigation.navigate('Collection')}
@@ -422,7 +425,11 @@ export default function CameraScreen({ navigation }) {
                             🌸 We can find:{'\n'}
                             🌾 Cornflowers - Blue wildflowers{'\n'}
                             🌼 Daisies - White with yellow centers{'\n'}
-                            🌺 Poppies - Vibrant red blooms{'\n\n'}
+                            🌺 Poppies - Vibrant red blooms{'\n'}
+                            🤍 Bladder Campion - White with inflated sepals{'\n'}
+                            🌻 Yellow Daisy - Bright yellow flowers{'\n'}
+                            💜 Knapweed - Purple thistle-like flowers{'\n'}
+                            🍀 Red Clover - Red-purple clover flowers{'\n\n'}
                             💡 Tips for best results:{'\n'}
                             • Use good lighting (natural light works best){'\n'}
                             • Get close to the flower{'\n'}

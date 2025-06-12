@@ -73,6 +73,38 @@ const plantData = [
         rarity: 'uncommon',
         coins: 75,
         emoji: '🌺'
+    },
+    {
+        id: 'blaussilene',
+        name: 'Bladder Campion',
+        description: 'A delicate white flower with inflated sepals, commonly found in meadows and grasslands. Known for its distinctive balloon-like calyx.',
+        rarity: 'common',
+        coins: 45,
+        emoji: '🤍'
+    },
+    {
+        id: 'gele_ganzenbloem',
+        name: 'Yellow Daisy',
+        description: 'A bright yellow flower that brings sunshine to any garden. These cheerful blooms are perfect for attracting pollinators.',
+        rarity: 'common',
+        coins: 55,
+        emoji: '🌻'
+    },
+    {
+        id: 'knoopkruid',
+        name: 'Knapweed',
+        description: 'A purple thistle-like flower with distinctive knobby flower heads. These hardy plants are important for wildlife and pollinators.',
+        rarity: 'uncommon',
+        coins: 65,
+        emoji: '💜'
+    },
+    {
+        id: 'rode_klaver',
+        name: 'Red Clover',
+        description: 'A vibrant red-purple clover flower that\'s both beautiful and beneficial. These nitrogen-fixing plants enrich the soil naturally.',
+        rarity: 'common',
+        coins: 40,
+        emoji: '🍀'
     }
 ];
 

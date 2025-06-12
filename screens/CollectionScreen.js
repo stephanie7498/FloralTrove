@@ -48,6 +48,8 @@ export default function CollectionScreen({ navigation }) {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
             }
+            // TODO: Add new plant images when they're properly added to the project:
+            // blaussilene, gele_ganzenbloem, knoopkruid, rode_klaver
         };
 
         if (imageMap[plantId] && imageMap[plantId][potId]) {
@@ -58,7 +60,8 @@ export default function CollectionScreen({ navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        return null;
+        // Fallback for new plants - use a basic pot image
+        return require('../assets/images/pots/basic_pot.png');
     };
 
     const getShelfItems = () => {
@@ -211,7 +214,11 @@ export default function CollectionScreen({ navigation }) {
                                 Look for these beautiful flowers:{'\n'}
                                 🌾 Cornflowers - Blue wildflowers{'\n'}
                                 🌼 Daisies - White with yellow centers{'\n'}
-                                🌺 Poppies - Vibrant red blooms
+                                🌺 Poppies - Vibrant red blooms{'\n'}
+                                🤍 Bladder Campion - White with inflated sepals{'\n'}
+                                🌻 Yellow Daisy - Bright yellow flowers{'\n'}
+                                💜 Knapweed - Purple thistle-like flowers{'\n'}
+                                🍀 Red Clover - Red-purple clover flowers
                             </Text>
                             <TouchableOpacity
                                 style={styles.collectButton}
@@ -242,7 +249,8 @@ export default function CollectionScreen({ navigation }) {
                                     • Use "Change All Pots" to switch pot styles{'\n'}
                                     • Complete challenges to unlock new pots{'\n'}
                                     • Each flower type has different coin values{'\n'}
-                                    • Some flowers have special animations in details!
+                                    • Some flowers have special animations in details!{'\n'}
+                                    • Collect all 7 flower types to complete the collection
                                 </Text>
                             </View>
                         </>

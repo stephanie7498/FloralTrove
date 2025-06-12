@@ -67,7 +67,7 @@ export default function PlantDetailScreen({ route, navigation }) {
     }
 
     const getPlantImageDirect = (plantId, potId = 'basic') => {
-        // For plant details, use GIFs to show beautiful animations
+        // For plant details, use GIFs for plants that have them
         if (plantId === 'cornflower') {
             return require('../assets/plantgifs/cornflower.gif');
         }
@@ -75,7 +75,7 @@ export default function PlantDetailScreen({ route, navigation }) {
             return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Fallback to static images for daisy or if needed
+        // Use static images for existing plants only
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -89,6 +89,8 @@ export default function PlantDetailScreen({ route, navigation }) {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
             }
+            // TODO: Add new plant images when they're properly added to the project:
+            // blaussilene, gele_ganzenbloem, knoopkruid, rode_klaver
         };
 
         if (imageMap[plantId] && imageMap[plantId][potId]) {
@@ -99,7 +101,8 @@ export default function PlantDetailScreen({ route, navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        return null;
+        // Fallback for new plants - use a basic pot image
+        return require('../assets/images/pots/basic_pot.png');
     };
 
     const formatDate = (dateString) => {
@@ -154,6 +157,38 @@ export default function PlantDetailScreen({ route, navigation }) {
                 "• Seeds are used in cooking and baking",
                 "• Can grow in poor soil conditions",
                 "• Attracts bees and other pollinators"
+            ],
+            blaussilene: [
+                "• Also known as Bladder Campion",
+                "• Distinctive inflated calyx gives it the 'bladder' name",
+                "• Common in meadows and grasslands",
+                "• White flowers bloom from late spring to autumn",
+                "• Young leaves are edible and taste like peas",
+                "• Important food source for wildlife"
+            ],
+            gele_ganzenbloem: [
+                "• Bright yellow petals attract many pollinators",
+                "• Blooms from spring through early fall",
+                "• Excellent cut flower for bouquets",
+                "• Drought-tolerant once established",
+                "• Seeds provide food for birds",
+                "• Easy to grow in most soil types"
+            ],
+            knoopkruid: [
+                "• Also known as Greater Knapweed",
+                "• Purple flower heads attract butterflies",
+                "• Deep taproot makes it drought resistant",
+                "• Blooms from summer to early autumn",
+                "• Important nectar source for bees",
+                "• Seeds are eaten by goldfinches and other birds"
+            ],
+            rode_klaver: [
+                "• Red Clover is a nitrogen-fixing legume",
+                "• Improves soil fertility naturally",
+                "• Important forage crop for livestock",
+                "• Flowers are rich in nectar",
+                "• Attracts bees, butterflies, and hummingbirds",
+                "• Can bloom multiple times per growing season"
             ]
         };
         return facts[plantId] || [

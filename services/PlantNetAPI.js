@@ -221,6 +221,34 @@ class PlantNetAPI {
                 commonNames: ['corn poppy', 'field poppy', 'red poppy', 'common poppy', 'flanders poppy'],
                 plantId: 'poppy',
                 commonName: 'Poppy'
+            },
+            // Bladder Campion (Blaussilene) mappings
+            {
+                scientificNames: ['silene vulgaris', 'silene latifolia'],
+                commonNames: ['bladder campion', 'white campion', 'maiden\'s tears', 'cowbell'],
+                plantId: 'blaussilene',
+                commonName: 'Bladder Campion'
+            },
+            // Yellow Daisy (Gele Ganzenbloem) mappings
+            {
+                scientificNames: ['leucanthemum vulgare', 'rudbeckia hirta', 'helianthus annuus', 'chrysanthemum segetum'],
+                commonNames: ['yellow daisy', 'corn marigold', 'black-eyed susan', 'golden daisy', 'yellow chamomile'],
+                plantId: 'gele_ganzenbloem',
+                commonName: 'Yellow Daisy'
+            },
+            // Knapweed (Knoopkruid) mappings
+            {
+                scientificNames: ['centaurea scabiosa', 'centaurea nigra', 'centaurea jacea'],
+                commonNames: ['greater knapweed', 'common knapweed', 'black knapweed', 'brown knapweed', 'hardheads'],
+                plantId: 'knoopkruid',
+                commonName: 'Knapweed'
+            },
+            // Red Clover (Rode Klaver) mappings
+            {
+                scientificNames: ['trifolium pratense', 'trifolium repens'],
+                commonNames: ['red clover', 'purple clover', 'meadow clover', 'cow clover', 'trefoil'],
+                plantId: 'rode_klaver',
+                commonName: 'Red Clover'
             }
         ];
 
