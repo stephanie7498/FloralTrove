@@ -34,7 +34,7 @@ export default function CollectionScreen({ navigation }) {
     };
 
     const getPlantImageDirect = (plantId, potId = 'basic') => {
-        // For collection display, always use static images with pot types to show pot variations
+        // For collection display, use existing plant images, fallback for new ones
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -48,8 +48,6 @@ export default function CollectionScreen({ navigation }) {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
             }
-            // TODO: Add new plant images when they're properly added to the project:
-            // blaussilene, gele_ganzenbloem, knoopkruid, rode_klaver
         };
 
         if (imageMap[plantId] && imageMap[plantId][potId]) {
@@ -60,7 +58,8 @@ export default function CollectionScreen({ navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        // Fallback for new plants - use a basic pot image
+        // For new plants without images, use the basic pot as fallback
+        // The UI will handle showing plant info via text/emoji
         return require('../assets/images/pots/basic_pot.png');
     };
 
@@ -88,6 +87,8 @@ export default function CollectionScreen({ navigation }) {
             console.log('Missing plant or pot data:', { plant, pot, item });
             return null;
         }
+
+        const hasCustomImage = ['cornflower', 'daisy', 'poppy'].includes(item.plantId);
 
         return (
             <TouchableOpacity
@@ -125,6 +126,11 @@ export default function CollectionScreen({ navigation }) {
                         style={styles.plantInPotImage}
                         resizeMode="contain"
                     />
+                    {!hasCustomImage && (
+                        <View style={styles.plantEmojiOverlay}>
+                            <Text style={styles.plantEmojiText}>{plant.emoji}</Text>
+                        </View>
+                    )}
                 </View>
             </TouchableOpacity>
         );
@@ -603,11 +609,28 @@ const styles = StyleSheet.create({
     },
     plantImageContainer: {
         backgroundColor: 'transparent',
+        position: 'relative',
     },
     plantInPotImage: {
         width: 85,
         height: 105,
         borderRadius: 8,
+    },
+    plantEmojiOverlay: {
+        position: 'absolute',
+        top: 10,
+        right: 5,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#4CAF50',
+    },
+    plantEmojiText: {
+        fontSize: 16,
     },
     emptyPot: {
         alignItems: 'center',

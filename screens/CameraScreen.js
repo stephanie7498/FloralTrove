@@ -36,7 +36,7 @@ export default function CameraScreen({ navigation }) {
             return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Use static images for existing plants only
+        // Use static images for existing plants, fallback for new ones
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -50,8 +50,6 @@ export default function CameraScreen({ navigation }) {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
             }
-            // TODO: Add new plant images when they're properly added to the project:
-            // blaussilene, gele_ganzenbloem, knoopkruid, rode_klaver
         };
 
         if (imageMap[plantId] && imageMap[plantId][potId]) {
@@ -62,7 +60,8 @@ export default function CameraScreen({ navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        // Fallback for new plants - use a basic pot image
+        // For new plants without images, use the basic pot as fallback
+        // The UI will handle showing plant info via text/emoji
         return require('../assets/images/pots/basic_pot.png');
     };
 
@@ -367,11 +366,18 @@ export default function CameraScreen({ navigation }) {
                         </Text>
                         <View style={styles.modalPlant}>
                             {foundPlant && (
-                                <Image
-                                    source={getPlantImageDirect(foundPlant.id, foundPotId)}
-                                    style={styles.modalPlantImage}
-                                    resizeMode="contain"
-                                />
+                                <View style={styles.modalPlantContainer}>
+                                    <Image
+                                        source={getPlantImageDirect(foundPlant.id, foundPotId)}
+                                        style={styles.modalPlantImage}
+                                        resizeMode="contain"
+                                    />
+                                    {!['cornflower', 'daisy', 'poppy'].includes(foundPlant.id) && (
+                                        <View style={styles.modalPlantEmojiOverlay}>
+                                            <Text style={styles.modalPlantEmojiText}>{foundPlant.emoji}</Text>
+                                        </View>
+                                    )}
+                                </View>
                             )}
                         </View>
                         <View style={styles.coinReward}>
@@ -689,10 +695,34 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 8,
     },
+    modalPlantContainer: {
+        position: 'relative',
+    },
     modalPlantImage: {
         width: 140,
         height: 160,
         borderRadius: 15,
+    },
+    modalPlantEmojiOverlay: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#4CAF50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    modalPlantEmojiText: {
+        fontSize: 20,
     },
     coinReward: {
         backgroundColor: '#FFA500',

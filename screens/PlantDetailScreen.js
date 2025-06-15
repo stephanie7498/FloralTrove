@@ -75,7 +75,7 @@ export default function PlantDetailScreen({ route, navigation }) {
             return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Use static images for existing plants only
+        // Use static images for existing plants, fallback for new ones
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -89,8 +89,6 @@ export default function PlantDetailScreen({ route, navigation }) {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
             }
-            // TODO: Add new plant images when they're properly added to the project:
-            // blaussilene, gele_ganzenbloem, knoopkruid, rode_klaver
         };
 
         if (imageMap[plantId] && imageMap[plantId][potId]) {
@@ -101,7 +99,8 @@ export default function PlantDetailScreen({ route, navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        // Fallback for new plants - use a basic pot image
+        // For new plants without images, use the basic pot as fallback
+        // The UI will handle showing plant info via text/emoji
         return require('../assets/images/pots/basic_pot.png');
     };
 
@@ -223,11 +222,18 @@ export default function PlantDetailScreen({ route, navigation }) {
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
                             <View style={styles.plantImageWrapper}>
-                                <Image
-                                    source={getPlantImageDirect(item.plantId, item.potId)}
-                                    style={styles.plantDetailImage}
-                                    resizeMode="contain"
-                                />
+                                <View style={styles.plantDetailContainer}>
+                                    <Image
+                                        source={getPlantImageDirect(item.plantId, item.potId)}
+                                        style={styles.plantDetailImage}
+                                        resizeMode="contain"
+                                    />
+                                    {!['cornflower', 'daisy', 'poppy'].includes(item.plantId) && (
+                                        <View style={styles.plantDetailEmojiOverlay}>
+                                            <Text style={styles.plantDetailEmojiText}>{plant.emoji}</Text>
+                                        </View>
+                                    )}
+                                </View>
                             </View>
                         </View>
                         <Text style={styles.plantName}>{plant.name}</Text>
@@ -443,10 +449,34 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(76, 175, 80, 0.2)',
         padding: 5,
     },
+    plantDetailContainer: {
+        position: 'relative',
+    },
     plantDetailImage: {
         width: 170,
         height: 200,
         borderRadius: 15,
+    },
+    plantDetailEmojiOverlay: {
+        position: 'absolute',
+        top: 15,
+        right: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: 25,
+        width: 50,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#4CAF50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 5,
+    },
+    plantDetailEmojiText: {
+        fontSize: 24,
     },
     plantName: {
         fontSize: 28,
