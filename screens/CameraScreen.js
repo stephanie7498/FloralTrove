@@ -1,3 +1,9 @@
+// =============================================================================
+// screens/CameraScreen.js - Plant foto herkenning scherm
+// =============================================================================
+// Dit scherm beheert foto selectie (camera/bibliotheek), PlantNet API calls,
+// en toont resultaten van plant identificatie met success/failure feedback.
+
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
@@ -16,19 +22,34 @@ import { useAppActions, useAppState } from '../context/AppContext';
 import PlantNetAPI from '../services/PlantNetAPI';
 
 export default function CameraScreen({ navigation }) {
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [showFoundModal, setShowFoundModal] = useState(false);
-    const [foundPlant, setFoundPlant] = useState(null);
-    const [foundPotId, setFoundPotId] = useState('basic');
-    const [showInstructions, setShowInstructions] = useState(false);
-    const [recognitionFailed, setRecognitionFailed] = useState(false);
-    const [identificationResult, setIdentificationResult] = useState(null);
+    // =============================================================================
+    // COMPONENT STATE
+    // =============================================================================
 
+    const [isProcessing, setIsProcessing] = useState(false);           // API call in progress
+    const [showFoundModal, setShowFoundModal] = useState(false);       // Success modal zichtbaar
+    const [foundPlant, setFoundPlant] = useState(null);               // Succesvol geïdentificeerde plant
+    const [foundPotId, setFoundPotId] = useState('basic');            // Pot type voor nieuwe plant
+    const [showInstructions, setShowInstructions] = useState(false);   // Instructies modal
+    const [recognitionFailed, setRecognitionFailed] = useState(false); // Herkenning mislukt
+    const [identificationResult, setIdentificationResult] = useState(null); // API resultaat data
+
+    // Context data
     const { collection } = useAppState();
     const { addPlantToCollection, getPlantData } = useAppActions();
 
+    // =============================================================================
+    // AFBEELDING HELPERS
+    // =============================================================================
+
+    /**
+     * Haal juiste afbeelding op voor plant (prioriteit aan GIFs in found modal)
+     * @param {string} plantId - Plant identifier
+     * @param {string} potId - Pot type identifier  
+     * @returns {Object} - React Native image require object
+     */
     const getPlantImageDirect = (plantId, potId = 'basic') => {
-        // For the found modal, prioritize GIFs for plants that have them
+        // Voor found modal: gebruik GIFs waar beschikbaar
         if (plantId === 'cornflower') {
             return require('../assets/plantgifs/cornflower.gif');
         }
@@ -36,7 +57,7 @@ export default function CameraScreen({ navigation }) {
             return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Use static images for existing plants, fallback for new ones
+        // Static images voor bestaande planten
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -56,6 +77,7 @@ export default function CameraScreen({ navigation }) {
             }
         };
 
+        // Fallback logica
         if (imageMap[plantId] && imageMap[plantId][potId]) {
             return imageMap[plantId][potId];
         }
@@ -64,25 +86,36 @@ export default function CameraScreen({ navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        // For new plants without images, use the basic pot as fallback
+        // Voor nieuwe planten zonder afbeeldingen: basic pot als fallback
         return require('../assets/images/pots/basic_pot.png');
     };
 
+    /**
+     * Haal lijst van al verzamelde plant IDs op
+     * @returns {Array} - Array van plant IDs in collectie
+     */
     const getCollectedPlantIds = () => {
         return collection.map(item => item.plantId);
     };
 
+    // =============================================================================
+    // FOTO SELECTIE FUNCTIONALITEIT
+    // =============================================================================
+
+    /**
+     * Hoofdfunctie: start foto selectie en identificatie proces
+     * Beheert camera/bibliotheek keuze en permissies
+     */
     const takePictureAndIdentify = async () => {
         if (isProcessing) return;
 
         try {
-            // Check if we're on simulator or device
+            // Vraag permissies voor camera en fotobibliotheek
             const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
             const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-            // Try camera first (for real devices)
+            // Camera beschikbaar (echte device)
             if (cameraStatus === 'granted') {
-                // Show options: Camera or Photo Library
                 Alert.alert(
                     "Select Photo Source",
                     "Choose how you want to add a photo for plant identification:",
@@ -101,7 +134,7 @@ export default function CameraScreen({ navigation }) {
                                         processImage(result.assets[0].uri);
                                     }
                                 } catch (error) {
-                                    // Camera failed (probably simulator), fall back to library
+                                    // Camera gefaald (waarschijnlijk simulator), val terug op bibliotheek
                                     console.log('📱 Camera not available, using photo library...');
                                     launchPhotoLibrary();
                                 }
@@ -118,7 +151,7 @@ export default function CameraScreen({ navigation }) {
                     ]
                 );
             } else if (libraryStatus === 'granted') {
-                // Only photo library available (simulator)
+                // Alleen fotobibliotheek beschikbaar (simulator)
                 launchPhotoLibrary();
             } else {
                 Alert.alert(
@@ -138,6 +171,9 @@ export default function CameraScreen({ navigation }) {
         }
     };
 
+    /**
+     * Start fotobibliotheek voor afbeelding selectie
+     */
     const launchPhotoLibrary = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -160,10 +196,18 @@ export default function CameraScreen({ navigation }) {
         }
     };
 
+    // =============================================================================
+    // PLANT IDENTIFICATIE PROCES
+    // =============================================================================
+
+    /**
+     * Verwerk geselecteerde afbeelding en start plant identificatie
+     * @param {string} imageUri - URI van geselecteerde afbeelding
+     */
     const processImage = async (imageUri) => {
         console.log('📸 Image selected:', imageUri);
 
-        // Request permission to send to PlantNet
+        // Vraag gebruiker toestemming voor PlantNet API
         const hasPermission = await PlantNetAPI.requestPermission();
         if (!hasPermission) {
             Alert.alert(
@@ -174,12 +218,13 @@ export default function CameraScreen({ navigation }) {
             return;
         }
 
+        // Reset state en start processing
         setIsProcessing(true);
         setRecognitionFailed(false);
         setIdentificationResult(null);
 
         try {
-            // Identify plant using PlantNet API
+            // Start plant identificatie via PlantNet API
             console.log('🔍 Starting plant identification...');
             const identificationResult = await PlantNetAPI.identifyPlant(imageUri, ['flower', 'leaf']);
 
@@ -187,7 +232,7 @@ export default function CameraScreen({ navigation }) {
             setIsProcessing(false);
 
             if (identificationResult.success && identificationResult.plantId) {
-                // Check if plant is already collected
+                // Succesvol geïdentificeerd - controleer duplicaten
                 const collectedPlantIds = getCollectedPlantIds();
                 if (collectedPlantIds.includes(identificationResult.plantId)) {
                     Alert.alert(
@@ -198,7 +243,7 @@ export default function CameraScreen({ navigation }) {
                     return;
                 }
 
-                // Add plant to collection
+                // Voeg plant toe aan collectie
                 const plants = getPlantData();
                 const plant = plants.find(p => p.id === identificationResult.plantId);
 
@@ -206,11 +251,11 @@ export default function CameraScreen({ navigation }) {
                     const wasAdded = addPlantToCollection(identificationResult.plantId);
 
                     if (wasAdded) {
+                        // Toon success modal
                         setFoundPlant(plant);
                         setFoundPotId('basic');
                         setShowFoundModal(true);
 
-                        // Show success message with confidence
                         console.log(`✅ Successfully identified: ${plant.name} (${identificationResult.confidence.toFixed(1)}% confidence)`);
                     } else {
                         setRecognitionFailed(true);
@@ -219,7 +264,7 @@ export default function CameraScreen({ navigation }) {
                     setRecognitionFailed(true);
                 }
             } else {
-                // Show detailed failure message
+                // Herkenning mislukt - toon gedetailleerde foutmelding
                 let failureMessage = 'Could not identify this plant.';
 
                 if (identificationResult.scientificName) {
@@ -247,6 +292,7 @@ export default function CameraScreen({ navigation }) {
             console.error('❌ Error during plant identification:', error);
             setIsProcessing(false);
 
+            // Gebruiksvriendelijke foutmeldingen
             let errorMessage = 'Something went wrong during plant identification.';
 
             if (error.message?.includes('network') || error.message?.includes('fetch')) {
@@ -264,11 +310,22 @@ export default function CameraScreen({ navigation }) {
         }
     };
 
+    // =============================================================================
+    // MODAL MANAGEMENT
+    // =============================================================================
+
+    /**
+     * Sluit success modal en reset state
+     */
     const closeFoundModal = () => {
         setShowFoundModal(false);
         setFoundPlant(null);
         setFoundPotId('basic');
     };
+
+    // =============================================================================
+    // RENDER
+    // =============================================================================
 
     return (
         <SafeAreaView style={styles.container}>
@@ -278,6 +335,7 @@ export default function CameraScreen({ navigation }) {
                 resizeMode="cover"
             >
                 <View style={styles.cameraOverlay}>
+                    {/* Header met back button en info */}
                     <View style={styles.topBar}>
                         <TouchableOpacity
                             style={styles.backButton}
@@ -293,13 +351,16 @@ export default function CameraScreen({ navigation }) {
                         </TouchableOpacity>
                     </View>
 
+                    {/* Camera viewfinder gebied */}
                     <View style={styles.viewfinderContainer}>
                         <View style={styles.viewfinder}>
+                            {/* Viewfinder hoeken */}
                             <View style={styles.viewfinderCorner} />
                             <View style={[styles.viewfinderCorner, styles.topRight]} />
                             <View style={[styles.viewfinderCorner, styles.bottomLeft]} />
                             <View style={[styles.viewfinderCorner, styles.bottomRight]} />
 
+                            {/* Default instructie tekst */}
                             {!isProcessing && !recognitionFailed && (
                                 <View style={styles.centerText}>
                                     <Text style={styles.instructionText}>Tap 'Select Photo' to take</Text>
@@ -308,6 +369,7 @@ export default function CameraScreen({ navigation }) {
                             )}
                         </View>
 
+                        {/* Processing indicator */}
                         {isProcessing && (
                             <View style={styles.processingContainer}>
                                 <ActivityIndicator size="large" color="#fff" />
@@ -316,6 +378,7 @@ export default function CameraScreen({ navigation }) {
                             </View>
                         )}
 
+                        {/* Failure state */}
                         {recognitionFailed && (
                             <View style={styles.failureContainer}>
                                 <Text style={styles.failureTitle}>
@@ -343,6 +406,7 @@ export default function CameraScreen({ navigation }) {
                         )}
                     </View>
 
+                    {/* Bottom controls */}
                     <View style={styles.bottomControls}>
                         <TouchableOpacity
                             style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
@@ -356,6 +420,7 @@ export default function CameraScreen({ navigation }) {
                 </View>
             </ImageBackground>
 
+            {/* Success Modal - toont gevonden plant */}
             <Modal
                 visible={showFoundModal}
                 transparent={true}
@@ -367,6 +432,8 @@ export default function CameraScreen({ navigation }) {
                         <Text style={styles.modalTitle}>
                             You found a {foundPlant?.name}!
                         </Text>
+
+                        {/* Plant afbeelding */}
                         <View style={styles.modalPlant}>
                             {foundPlant && (
                                 <View style={styles.modalPlantContainer}>
@@ -375,6 +442,7 @@ export default function CameraScreen({ navigation }) {
                                         style={styles.modalPlantImage}
                                         resizeMode="contain"
                                     />
+                                    {/* Emoji overlay voor planten zonder custom afbeelding */}
                                     {!['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(foundPlant.id) && (
                                         <View style={styles.modalPlantEmojiOverlay}>
                                             <Text style={styles.modalPlantEmojiText}>{foundPlant.emoji}</Text>
@@ -383,9 +451,13 @@ export default function CameraScreen({ navigation }) {
                                 </View>
                             )}
                         </View>
+
+                        {/* Coin reward */}
                         <View style={styles.coinReward}>
                             <Text style={styles.coinRewardText}>+{foundPlant?.coins} coins! 🪙</Text>
                         </View>
+
+                        {/* AI confidence indicator */}
                         {identificationResult && (
                             <View style={styles.confidenceContainer}>
                                 <Text style={styles.confidenceText}>
@@ -393,6 +465,8 @@ export default function CameraScreen({ navigation }) {
                                 </Text>
                             </View>
                         )}
+
+                        {/* Action buttons */}
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
                                 style={styles.modalButton}
@@ -414,6 +488,7 @@ export default function CameraScreen({ navigation }) {
                 </View>
             </Modal>
 
+            {/* Instructions Modal - uitleg over hoe de app werkt */}
             <Modal
                 visible={showInstructions}
                 transparent={true}

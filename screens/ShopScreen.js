@@ -1,3 +1,9 @@
+// =============================================================================
+// screens/ShopScreen.js - Pot winkel scherm
+// =============================================================================
+// Dit scherm toont beschikbare en gekochte potten, beheert aankopen met coins,
+// en toont pot details in modals. Bevat ook pot rarity systeem.
+
 import React, { useCallback, useMemo, useState } from 'react';
 import {
     Alert,
@@ -14,24 +20,39 @@ import {
 import { useAppActions, useAppSelectors, useAppState } from '../context/AppContext';
 
 export default function ShopScreen({ navigation }) {
+    // Component state
     const [selectedPot, setSelectedPot] = useState(null);
     const [showPotModal, setShowPotModal] = useState(false);
 
+    // Context data
     const { coins, unlockedPots } = useAppState();
     const { buyPot, getPotData } = useAppActions();
     const { canAffordPot } = useAppSelectors();
 
+    // =============================================================================
+    // AFBEELDING HELPERS
+    // =============================================================================
+
+    /**
+     * Haal pot afbeelding op basis van pot ID
+     */
     const getPotImageDirect = (potId) => {
         const imageMap = {
             basic: require('../assets/images/pots/basic_pot.png'),
             round: require('../assets/images/pots/round_pot.png'),
         };
-
         return imageMap[potId] || imageMap['basic'];
     };
 
+    // =============================================================================
+    // DERIVED DATA
+    // =============================================================================
+
     const pots = useMemo(() => getPotData(), [getPotData]);
 
+    /**
+     * Verdeel potten in beschikbaar en gekocht
+     */
     const { availablePotsList, ownedPotsList } = useMemo(() => {
         const available = pots.filter(pot => !unlockedPots.includes(pot.id));
         const owned = pots.filter(pot => unlockedPots.includes(pot.id));
@@ -41,6 +62,9 @@ export default function ShopScreen({ navigation }) {
         };
     }, [pots, unlockedPots]);
 
+    /**
+     * Bereken winkel statistieken
+     */
     const shopStats = useMemo(() => {
         const totalPots = pots.length;
         const ownedCount = unlockedPots.length;
@@ -50,6 +74,10 @@ export default function ShopScreen({ navigation }) {
         return { totalPots, ownedCount, availableCount, completionPercentage };
     }, [pots, unlockedPots]);
 
+    // =============================================================================
+    // NAVIGATION HELPERS
+    // =============================================================================
+
     const navigateBack = useCallback(() => {
         navigation.goBack();
     }, [navigation]);
@@ -58,7 +86,15 @@ export default function ShopScreen({ navigation }) {
         navigation.navigate('Challenges');
     }, [navigation]);
 
+    // =============================================================================
+    // BUSINESS LOGIC
+    // =============================================================================
+
+    /**
+     * Beheert pot aankoop proces met validatie en bevestiging
+     */
     const handleBuyPot = useCallback(async (pot) => {
+        // Valideer aankoop
         if (unlockedPots.includes(pot.id)) {
             Alert.alert("Already Owned", "You already own this pot!");
             return;
@@ -80,6 +116,7 @@ export default function ShopScreen({ navigation }) {
             return;
         }
 
+        // Bevestig aankoop
         Alert.alert(
             "Confirm Purchase 🛒",
             `Buy ${pot.name} for ${pot.price} coins?\n\n${pot.description}`,
@@ -109,6 +146,10 @@ export default function ShopScreen({ navigation }) {
         );
     }, [unlockedPots, canAffordPot, coins, buyPot, navigateToChallenges]);
 
+    // =============================================================================
+    // MODAL MANAGEMENT
+    // =============================================================================
+
     const showPotDetails = useCallback((pot) => {
         setSelectedPot(pot);
         setShowPotModal(true);
@@ -119,6 +160,13 @@ export default function ShopScreen({ navigation }) {
         setSelectedPot(null);
     }, []);
 
+    // =============================================================================
+    // RARITY SYSTEM
+    // =============================================================================
+
+    /**
+     * Bepaal pot rarity gebaseerd op prijs
+     */
     const getPotRarity = useCallback((price) => {
         if (price === 0) return { rarity: 'Free', color: '#4CAF50', icon: '🎁' };
         if (price <= 500) return { rarity: 'Common', color: '#2196F3', icon: '⭐' };
@@ -126,6 +174,13 @@ export default function ShopScreen({ navigation }) {
         return { rarity: 'Legendary', color: '#9C27B0', icon: '💎' };
     }, []);
 
+    // =============================================================================
+    // RENDER HELPERS
+    // =============================================================================
+
+    /**
+     * Render individuele pot item met status en acties
+     */
     const renderPotItem = useCallback((pot) => {
         const isOwned = unlockedPots.includes(pot.id);
         const canAfford = canAffordPot(pot.id);
@@ -141,6 +196,7 @@ export default function ShopScreen({ navigation }) {
                 onPress={() => showPotDetails(pot)}
                 accessibilityLabel={`${pot.name}, ${pot.price} coins${isOwned ? ', owned' : ''}`}
             >
+                {/* Pot afbeelding */}
                 <View style={styles.potDisplay}>
                     <View style={styles.potImageWrapper}>
                         <Image
@@ -152,6 +208,7 @@ export default function ShopScreen({ navigation }) {
                             resizeMode="contain"
                         />
                     </View>
+                    {/* Owned indicator */}
                     {isOwned && (
                         <View style={styles.ownedOverlay}>
                             <Text style={styles.ownedIcon}>✓</Text>
@@ -159,11 +216,13 @@ export default function ShopScreen({ navigation }) {
                     )}
                 </View>
 
+                {/* Pot informatie */}
                 <View style={styles.potInfo}>
                     <View style={styles.potHeader}>
                         <Text style={[styles.potName, isOwned && styles.potNameOwned]}>
                             {pot.name}
                         </Text>
+                        {/* Rarity badge */}
                         <View style={[styles.rarityBadge, { backgroundColor: rarity.color }]}>
                             <Text style={styles.rarityIcon}>{rarity.icon}</Text>
                             <Text style={styles.rarityText}>{rarity.rarity}</Text>
@@ -174,6 +233,7 @@ export default function ShopScreen({ navigation }) {
                         {pot.description}
                     </Text>
 
+                    {/* Prijs weergave */}
                     <View style={styles.priceContainer}>
                         <Text style={styles.coinIcon}>🪙</Text>
                         <Text style={[styles.potPrice, isOwned && styles.potPriceOwned]}>
@@ -182,6 +242,7 @@ export default function ShopScreen({ navigation }) {
                     </View>
                 </View>
 
+                {/* Action button/badge */}
                 {isOwned ? (
                     <View style={styles.ownedBadge}>
                         <Text style={styles.ownedText}>✓</Text>
@@ -212,6 +273,10 @@ export default function ShopScreen({ navigation }) {
         );
     }, [unlockedPots, canAffordPot, getPotImageDirect, getPotRarity, showPotDetails, handleBuyPot]);
 
+    // =============================================================================
+    // RENDER
+    // =============================================================================
+
     return (
         <SafeAreaView style={styles.container}>
             <ImageBackground
@@ -220,6 +285,7 @@ export default function ShopScreen({ navigation }) {
                 resizeMode="cover"
             >
                 <View style={styles.overlay}>
+                    {/* Header met navigatie en coins */}
                     <View style={styles.header}>
                         <TouchableOpacity
                             style={styles.backButton}
@@ -239,6 +305,7 @@ export default function ShopScreen({ navigation }) {
                         </TouchableOpacity>
                     </View>
 
+                    {/* Statistieken overzicht */}
                     <View style={styles.statsContainer}>
                         <View style={styles.statItem}>
                             <Text style={styles.statNumber}>{shopStats.ownedCount}</Text>
@@ -256,6 +323,7 @@ export default function ShopScreen({ navigation }) {
 
                     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                         <View style={styles.content}>
+                            {/* Beschikbare potten sectie */}
                             {availablePotsList.length > 0 && (
                                 <View style={styles.section}>
                                     <Text style={styles.sectionTitle}>🛒 Available Pots</Text>
@@ -265,6 +333,7 @@ export default function ShopScreen({ navigation }) {
                                 </View>
                             )}
 
+                            {/* Gekochte potten sectie */}
                             {ownedPotsList.length > 0 && (
                                 <View style={styles.section}>
                                     <Text style={styles.sectionTitle}>✅ Your Collection</Text>
@@ -274,6 +343,7 @@ export default function ShopScreen({ navigation }) {
                                 </View>
                             )}
 
+                            {/* Voltooiing bericht */}
                             {availablePotsList.length === 0 && (
                                 <View style={styles.completionContainer}>
                                     <Text style={styles.completionTitle}>🎉 Collection Complete!</Text>
@@ -284,6 +354,7 @@ export default function ShopScreen({ navigation }) {
                                 </View>
                             )}
 
+                            {/* Shopping tips */}
                             <View style={styles.tipContainer}>
                                 <Text style={styles.tipTitle}>💡 Shopping Tips</Text>
                                 <Text style={styles.tipText}>
@@ -297,6 +368,7 @@ export default function ShopScreen({ navigation }) {
                         </View>
                     </ScrollView>
 
+                    {/* Bottom actions */}
                     <View style={styles.bottomActions}>
                         <TouchableOpacity
                             style={styles.actionButton}
@@ -309,6 +381,7 @@ export default function ShopScreen({ navigation }) {
                 </View>
             </ImageBackground>
 
+            {/* Pot details modal */}
             <Modal
                 visible={showPotModal}
                 transparent={true}
@@ -330,6 +403,7 @@ export default function ShopScreen({ navigation }) {
                                     </TouchableOpacity>
                                 </View>
 
+                                {/* Pot afbeelding */}
                                 <View style={styles.modalPotDisplay}>
                                     <View style={styles.modalImageWrapper}>
                                         <Image
@@ -340,9 +414,11 @@ export default function ShopScreen({ navigation }) {
                                     </View>
                                 </View>
 
+                                {/* Pot informatie */}
                                 <Text style={styles.modalPotName}>{selectedPot.name}</Text>
                                 <Text style={styles.modalPotDescription}>{selectedPot.description}</Text>
 
+                                {/* Pot statistieken */}
                                 <View style={styles.modalPotStats}>
                                     <View style={styles.modalStat}>
                                         <Text style={styles.modalStatLabel}>Price</Text>
@@ -358,6 +434,7 @@ export default function ShopScreen({ navigation }) {
                                     </View>
                                 </View>
 
+                                {/* Action buttons */}
                                 {!unlockedPots.includes(selectedPot.id) && (
                                     <TouchableOpacity
                                         style={[

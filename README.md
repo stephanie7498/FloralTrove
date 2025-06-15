@@ -1,50 +1,70 @@
-# Welcome to your Expo app 👋
+# Flora Trove - Plant Collection App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Een React Native app voor het herkennen en verzamelen van bloemen met AI-ondersteuning.
 
-## Get started
+*Deze app en code zijn gegenereerd met Claude.ai*
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 🚀 App Starten
 
 ```bash
-npm run reset-project
+# Installeer dependencies
+npm install
+
+# Start de app
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Scan de QR code met je telefoon of gebruik een simulator.
 
-## Learn more
+## 🌸 Wat doet de app?
 
-To learn more about developing your project with Expo, look at the following resources:
+- **📷 Maak foto's** van bloemen voor AI-identificatie via PlantNet
+- **🏆 Verzamel planten** in virtuele potten op planken
+- **🪙 Verdien coins** door uitdagingen te voltooien  
+- **🛒 Koop nieuwe potten** in de winkel
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🎯 Demo Flow (5 minuten)
 
-## Join the community
+1. **Start app** → Home scherm
+2. **Tap "Collect now"** → Camera scherm
+3. **Tap "Select Photo"** → Kies foto van bloem
+4. **Toestemming geven** → PlantNet identificeert bloem
+5. **Plant gevonden!** → Coins verdiend, naar collectie
+6. **Bekijk collectie** → Plant op plank in pot
+7. **Check uitdagingen** → Voortgang en beloningen
+8. **Bezoek winkel** → Koop nieuwe potten
 
-Join our community of developers creating universal apps.
+## 🌺 Ondersteunde Bloemen
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+De app herkent deze 4 bloemen via PlantNet AI:
+- 🌾 **Cornflower** (korenbloem) - 40 coins
+- 🌼 **Daisy** (madeliefje) - 50 coins  
+- 🌺 **Poppy** (klaproos) - 75 coins
+- 🌻 **Yellow Daisy** (gele bloem) - 55 coins
+
+## 💡 Demo Tips
+
+- **Gebruik foto library** op simulator (camera werkt niet)
+- **Test met echte bloemen** op device voor beste resultaten
+- **Probeer verschillende bloemen** - elk type eenmaal verzamelen
+- **Check animaties** - cornflower en poppy hebben GIFs!
+- **Verken alle schermen** - Home, Camera, Collection, Challenges, Shop
+
+## 🔧 Technische Details
+
+- **React Native** met Expo
+- **PlantNet API** voor plant herkenning
+- **Context API** voor state management
+- **React Navigation** voor schermnavigatie
+- **Image Picker** voor foto selectie
+
+## 📱 Compatibiliteit
+
+- iOS en Android
+- Expo Go app
+- Simulator/Emulator support
+- Werkt met foto library op simulator
+
+---
+
+*Volledige app ontwikkeld met Claude.ai - van concept tot werkende code met AI plant herkenning.*

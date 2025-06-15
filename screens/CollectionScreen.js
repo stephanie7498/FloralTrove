@@ -1,3 +1,9 @@
+// =============================================================================
+// screens/CollectionScreen.js - Plant collectie overzicht
+// =============================================================================
+// Dit scherm toont alle verzamelde planten op houten planken in verschillende potten.
+// Gebruikers kunnen pot stijlen veranderen en naar plant details navigeren.
+
 import React, { useState } from 'react';
 import {
     Image,
@@ -12,29 +18,36 @@ import {
 import { useAppActions, useAppState } from '../context/AppContext';
 
 export default function CollectionScreen({ navigation }) {
+    // Component state
+    const [showPotSelector, setShowPotSelector] = useState(false);
+
+    // Context data
     const { collection, coins, unlockedPots } = useAppState();
     const { getPlantData, getPotData, changeAllPots } = useAppActions();
-    const [showPotSelector, setShowPotSelector] = useState(false);
 
     const plants = getPlantData();
     const pots = getPotData();
 
-    // Debug logging
-    console.log('CollectionScreen - Collection:', collection);
-    console.log('CollectionScreen - Plants data:', plants);
-    console.log('CollectionScreen - Pots data:', pots);
+    // =============================================================================
+    // AFBEELDING HELPERS
+    // =============================================================================
 
+    /**
+     * Haal pot afbeelding op basis van pot ID
+     */
     const getPotImageDirect = (potId) => {
         const imageMap = {
             basic: require('../assets/images/pots/basic_pot.png'),
             round: require('../assets/images/pots/round_pot.png'),
         };
-
         return imageMap[potId] || imageMap['basic'];
     };
 
+    /**
+     * Haal plant+pot combinatie afbeelding op
+     * Voor collectie weergave: gebruik static images, fallback voor nieuwe planten
+     */
     const getPlantImageDirect = (plantId, potId = 'basic') => {
-        // For collection display, use existing plant images, fallback for new ones
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -54,19 +67,28 @@ export default function CollectionScreen({ navigation }) {
             }
         };
 
+        // Probeer exacte match
         if (imageMap[plantId] && imageMap[plantId][potId]) {
             return imageMap[plantId][potId];
         }
 
+        // Fallback naar basic pot voor plant
         if (imageMap[plantId] && imageMap[plantId]['basic']) {
             return imageMap[plantId]['basic'];
         }
 
-        // For new plants without images, use the basic pot as fallback
-        // The UI will handle showing plant info via text/emoji
+        // Voor nieuwe planten: alleen pot afbeelding, emoji wordt bovenop getoond
         return require('../assets/images/pots/basic_pot.png');
     };
 
+    // =============================================================================
+    // LAYOUT HELPERS
+    // =============================================================================
+
+    /**
+     * Verdeel collectie over 3 planken (3 items per plank)
+     * @returns {Array} - Array van plank arrays
+     */
     const getShelfItems = () => {
         const shelves = [[], [], []];
         collection.forEach((item, index) => {
@@ -78,11 +100,25 @@ export default function CollectionScreen({ navigation }) {
         return shelves;
     };
 
+    // =============================================================================
+    // EVENT HANDLERS
+    // =============================================================================
+
+    /**
+     * Verander alle potten in collectie naar nieuwe pot type
+     */
     const handleChangePots = (newPotId) => {
         changeAllPots(newPotId);
         setShowPotSelector(false);
     };
 
+    // =============================================================================
+    // RENDER HELPERS
+    // =============================================================================
+
+    /**
+     * Render individuele plant in pot op plank
+     */
     const renderPlantInPot = (item) => {
         const plant = plants.find(p => p.id === item.plantId);
         const pot = pots.find(p => p.id === item.potId);
@@ -92,6 +128,7 @@ export default function CollectionScreen({ navigation }) {
             return null;
         }
 
+        // Check of plant custom afbeelding heeft
         const hasCustomImage = ['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(item.plantId);
 
         return (
@@ -99,7 +136,7 @@ export default function CollectionScreen({ navigation }) {
                 key={item.id}
                 style={styles.plantContainer}
                 onPress={() => {
-                    console.log('Navigating to PlantDetail with:', { item, plant, pot });
+                    // Navigeer naar plant detail met alle benodigde data
                     navigation.navigate('PlantDetail', {
                         item: {
                             id: item.id,
@@ -130,6 +167,7 @@ export default function CollectionScreen({ navigation }) {
                         style={styles.plantInPotImage}
                         resizeMode="contain"
                     />
+                    {/* Toon emoji overlay voor planten zonder custom afbeelding */}
                     {!hasCustomImage && (
                         <View style={styles.plantEmojiOverlay}>
                             <Text style={styles.plantEmojiText}>{plant.emoji}</Text>
@@ -140,6 +178,9 @@ export default function CollectionScreen({ navigation }) {
         );
     };
 
+    /**
+     * Render lege pot plaats op plank
+     */
     const renderEmptySpot = (index) => (
         <View key={`empty-${index}`} style={styles.emptyPot}>
             <View style={styles.emptyPotContainer}>
@@ -149,27 +190,41 @@ export default function CollectionScreen({ navigation }) {
         </View>
     );
 
+    /**
+     * Render volledige plank met ondersteuning
+     */
     const renderShelf = (shelfItems, shelfIndex) => (
         <View key={shelfIndex} style={styles.shelfContainer}>
+            {/* Plank inhoud (3 posities) */}
             <View style={styles.shelfContent}>
                 {Array.from({ length: 3 }).map((_, spotIndex) => {
                     const item = shelfItems[spotIndex];
                     return item ? renderPlantInPot(item) : renderEmptySpot(`${shelfIndex}-${spotIndex}`);
                 })}
             </View>
+            {/* Houten plank visueel */}
             <View style={styles.shelfBoard} />
             <View style={styles.shelfSupportLeft} />
             <View style={styles.shelfSupportRight} />
         </View>
     );
 
+    // =============================================================================
+    // DERIVED DATA
+    // =============================================================================
+
     const shelves = getShelfItems();
     const currentPotName = collection.length > 0 ?
         pots.find(p => p.id === collection[0].potId)?.name || 'Basic Clay Pot' :
         'Basic Clay Pot';
 
+    // =============================================================================
+    // RENDER
+    // =============================================================================
+
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header met navigatie en coins */}
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
@@ -187,6 +242,7 @@ export default function CollectionScreen({ navigation }) {
                 </TouchableOpacity>
             </View>
 
+            {/* Sub-header met uitdagingen en statistieken */}
             <View style={styles.subHeader}>
                 <TouchableOpacity
                     style={styles.challengesButton}
@@ -201,6 +257,7 @@ export default function CollectionScreen({ navigation }) {
                 </View>
             </View>
 
+            {/* Pot selector sectie (alleen zichtbaar als meerdere potten) */}
             {collection.length > 0 && unlockedPots.length > 1 && (
                 <View style={styles.potSelectorSection}>
                     <Text style={styles.potSelectorLabel}>Current pot style: {currentPotName}</Text>
@@ -217,6 +274,7 @@ export default function CollectionScreen({ navigation }) {
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
                     {collection.length === 0 ? (
+                        // Empty state - geen planten verzameld
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyTitle}>Your collection is empty</Text>
                             <Text style={styles.emptySubtitle}>
@@ -236,6 +294,7 @@ export default function CollectionScreen({ navigation }) {
                             </TouchableOpacity>
                         </View>
                     ) : (
+                        // Collectie weergave
                         <>
                             <View style={styles.collectionHeader}>
                                 <Text style={styles.collectionTitle}>🌸 Your Flower Garden</Text>
@@ -244,10 +303,12 @@ export default function CollectionScreen({ navigation }) {
                                 </Text>
                             </View>
 
+                            {/* Planken container */}
                             <View style={styles.shelvesContainer}>
                                 {shelves.map((shelfItems, index) => renderShelf(shelfItems, index))}
                             </View>
 
+                            {/* Collectie tips */}
                             <View style={styles.collectionTips}>
                                 <Text style={styles.tipsTitle}>💡 Collection Tips</Text>
                                 <Text style={styles.tipsText}>
@@ -265,6 +326,7 @@ export default function CollectionScreen({ navigation }) {
                 </View>
             </ScrollView>
 
+            {/* Bottom action buttons */}
             <View style={styles.bottomActions}>
                 <TouchableOpacity
                     style={styles.actionButton}
@@ -285,6 +347,7 @@ export default function CollectionScreen({ navigation }) {
                 )}
             </View>
 
+            {/* Pot selector modal */}
             <Modal
                 visible={showPotSelector}
                 transparent={true}
@@ -307,6 +370,7 @@ export default function CollectionScreen({ navigation }) {
                             This will change all plants in your collection to the selected pot style.
                         </Text>
 
+                        {/* Pot opties */}
                         <View style={styles.potOptions}>
                             {unlockedPots.map(potId => {
                                 const pot = pots.find(p => p.id === potId);

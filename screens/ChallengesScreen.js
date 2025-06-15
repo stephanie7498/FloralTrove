@@ -1,3 +1,9 @@
+// =============================================================================
+// screens/ChallengesScreen.js - Uitdagingen overzicht
+// =============================================================================
+// Dit scherm toont alle uitdagingen met voortgang, beloningen en een gids
+// voor het verzamelen van verschillende bloemen types.
+
 import React, { useCallback, useMemo } from 'react';
 import {
     SafeAreaView,
@@ -10,9 +16,17 @@ import {
 import { useAppSelectors, useAppState } from '../context/AppContext';
 
 export default function ChallengesScreen({ navigation }) {
+    // Context data
     const { coins, challenges } = useAppState();
     const { activeChallenges, completedChallenges: completedCount } = useAppSelectors();
 
+    // =============================================================================
+    // DERIVED DATA
+    // =============================================================================
+
+    /**
+     * Bereken uitdaging statistieken
+     */
     const challengeStats = useMemo(() => {
         const total = challenges.length;
         const completed = challenges.filter(c => c.completed).length;
@@ -22,6 +36,10 @@ export default function ChallengesScreen({ navigation }) {
 
         return { total, completed, totalReward };
     }, [challenges]);
+
+    // =============================================================================
+    // NAVIGATION HELPERS
+    // =============================================================================
 
     const navigateBack = useCallback(() => {
         navigation.goBack();
@@ -35,12 +53,20 @@ export default function ChallengesScreen({ navigation }) {
         navigation.navigate('Camera');
     }, [navigation]);
 
+    // =============================================================================
+    // RENDER HELPERS
+    // =============================================================================
+
+    /**
+     * Render individuele uitdaging card
+     */
     const renderChallenge = useCallback((challenge) => {
         const progressPercentage = Math.min((challenge.progress / challenge.target) * 100, 100);
         const isCompleted = challenge.completed;
 
         return (
             <View key={challenge.id} style={styles.challengeCard}>
+                {/* Challenge header met label en completed badge */}
                 <View style={styles.challengeHeader}>
                     <Text style={styles.challengeLabel}>Challenge #{challenge.id}</Text>
                     {isCompleted && (
@@ -50,8 +76,10 @@ export default function ChallengesScreen({ navigation }) {
                     )}
                 </View>
 
+                {/* Challenge titel */}
                 <Text style={styles.challengeTitle}>{challenge.title}</Text>
 
+                {/* Voortgangsbalk */}
                 <View style={styles.progressSection}>
                     <View style={styles.progressBar}>
                         <View
@@ -71,6 +99,7 @@ export default function ChallengesScreen({ navigation }) {
                     </Text>
                 </View>
 
+                {/* Beloning sectie */}
                 <View style={styles.rewardContainer}>
                     <Text style={styles.rewardLabel}>Reward:</Text>
                     <View style={[styles.rewardValue, isCompleted && styles.rewardValueClaimed]}>
@@ -82,6 +111,7 @@ export default function ChallengesScreen({ navigation }) {
                     </View>
                 </View>
 
+                {/* Status bericht */}
                 {isCompleted && (
                     <View style={styles.completedMessage}>
                         <Text style={styles.completedMessageText}>Challenge Completed! 🎉</Text>
@@ -99,8 +129,13 @@ export default function ChallengesScreen({ navigation }) {
         );
     }, []);
 
+    // =============================================================================
+    // RENDER
+    // =============================================================================
+
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header met navigatie en coins */}
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
@@ -124,6 +159,7 @@ export default function ChallengesScreen({ navigation }) {
                 <View style={styles.content}>
                     <Text style={styles.subtitle}>Complete challenges to earn coins!</Text>
 
+                    {/* Statistieken overzicht */}
                     <View style={styles.statsContainer}>
                         <View style={styles.statCard}>
                             <Text style={styles.statNumber}>{challengeStats.completed}</Text>
@@ -139,6 +175,7 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     </View>
 
+                    {/* Actieve uitdagingen sectie */}
                     {activeChallenges.length > 0 && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>🎯 Active Challenges</Text>
@@ -148,6 +185,7 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     )}
 
+                    {/* Voltooide uitdagingen sectie */}
                     {completedCount > 0 && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>✅ Completed Challenges</Text>
@@ -157,6 +195,7 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     )}
 
+                    {/* Bloemen verzamel gids */}
                     <View style={styles.guideContainer}>
                         <Text style={styles.guideTitle}>🌸 Flower Collection Guide</Text>
                         <Text style={styles.guideSubtitle}>We can identify these 4 flower types:</Text>
@@ -192,6 +231,7 @@ export default function ChallengesScreen({ navigation }) {
                         </View>
                     </View>
 
+                    {/* Tips voor gebruikers */}
                     <View style={styles.tipContainer}>
                         <Text style={styles.tipTitle}>💡 Pro Tips</Text>
                         <Text style={styles.tipText}>
@@ -208,6 +248,7 @@ export default function ChallengesScreen({ navigation }) {
                         </Text>
                     </View>
 
+                    {/* Motivatie bericht als alle uitdagingen voltooid */}
                     {activeChallenges.length === 0 && completedCount === challenges.length && (
                         <View style={styles.motivationContainer}>
                             <Text style={styles.motivationTitle}>🏆 All Challenges Complete!</Text>
@@ -220,6 +261,7 @@ export default function ChallengesScreen({ navigation }) {
                 </View>
             </ScrollView>
 
+            {/* Bottom action button */}
             <View style={styles.bottomActions}>
                 <TouchableOpacity
                     style={styles.actionButton}

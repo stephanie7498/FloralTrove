@@ -1,3 +1,9 @@
+// =============================================================================
+// screens/PlantDetailScreen.js - Plant detail weergave
+// =============================================================================
+// Dit scherm toont uitgebreide informatie over een specifieke plant uit de collectie,
+// inclusief afbeeldingen/GIFs, beschrijving, care tips en discovery informatie.
+
 import React from 'react';
 import {
     Image,
@@ -13,16 +19,20 @@ import { useAppState } from '../context/AppContext';
 export default function PlantDetailScreen({ route, navigation }) {
     const { coins } = useAppState();
 
-    // Enhanced debugging
+    // =============================================================================
+    // PARAMETER VALIDATIE
+    // =============================================================================
+
+    // Debug logging voor parameter validatie
     console.log('PlantDetailScreen route params:', route?.params);
 
-    // Defensive programming - check all route params
+    // Defensieve programmering - controleer alle route parameters
     const routeParams = route?.params || {};
     const { item, plant, pot } = routeParams;
 
     console.log('Extracted params:', { item, plant, pot });
 
-    // If any essential data is missing, show error screen
+    // Als essentiële data ontbreekt, toon error scherm
     if (!item || !plant || !pot) {
         console.log('Missing data detected:', {
             hasItem: !!item,
@@ -66,8 +76,18 @@ export default function PlantDetailScreen({ route, navigation }) {
         );
     }
 
+    // =============================================================================
+    // AFBEELDING HELPERS
+    // =============================================================================
+
+    /**
+     * Haal juiste plant afbeelding op (prioriteit aan GIFs in detail view)
+     * @param {string} plantId - Plant identifier
+     * @param {string} potId - Pot type identifier
+     * @returns {Object} - React Native image require object
+     */
     const getPlantImageDirect = (plantId, potId = 'basic') => {
-        // For plant details, use GIFs for plants that have them
+        // Voor plant details: gebruik GIFs waar beschikbaar
         if (plantId === 'cornflower') {
             return require('../assets/plantgifs/cornflower.gif');
         }
@@ -75,7 +95,7 @@ export default function PlantDetailScreen({ route, navigation }) {
             return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Use static images for existing plants, fallback for new ones
+        // Static images voor bestaande planten
         const imageMap = {
             cornflower: {
                 basic: require('../assets/images/plants/cornflower_basic_pot.png'),
@@ -95,6 +115,7 @@ export default function PlantDetailScreen({ route, navigation }) {
             }
         };
 
+        // Fallback logica
         if (imageMap[plantId] && imageMap[plantId][potId]) {
             return imageMap[plantId][potId];
         }
@@ -103,11 +124,17 @@ export default function PlantDetailScreen({ route, navigation }) {
             return imageMap[plantId]['basic'];
         }
 
-        // For new plants without images, use the basic pot as fallback
-        // The UI will handle showing plant info via text/emoji
+        // Voor nieuwe planten zonder afbeeldingen: basic pot als fallback
         return require('../assets/images/pots/basic_pot.png');
     };
 
+    // =============================================================================
+    // UTILITY FUNCTIONS
+    // =============================================================================
+
+    /**
+     * Format datum naar leesbare string
+     */
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -117,6 +144,9 @@ export default function PlantDetailScreen({ route, navigation }) {
         });
     };
 
+    /**
+     * Bepaal kleur op basis van rarity
+     */
     const getRarityColor = (rarity) => {
         switch (rarity) {
             case 'common': return '#27ae60';
@@ -126,6 +156,9 @@ export default function PlantDetailScreen({ route, navigation }) {
         }
     };
 
+    /**
+     * Bepaal emoji op basis van rarity
+     */
     const getRarityIcon = (rarity) => {
         switch (rarity) {
             case 'common': return '🟢';
@@ -135,6 +168,15 @@ export default function PlantDetailScreen({ route, navigation }) {
         }
     };
 
+    // =============================================================================
+    // CONTENT DATA
+    // =============================================================================
+
+    /**
+     * Haal plant-specifieke fun facts op
+     * @param {string} plantId - Plant identifier
+     * @returns {Array} - Array van fact strings
+     */
     const getPlantFacts = (plantId) => {
         const facts = {
             cornflower: [
@@ -170,6 +212,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                 "• Easy to grow in most soil types"
             ]
         };
+
         return facts[plantId] || [
             "• A beautiful flower in your collection",
             "• Each flower has its own unique characteristics",
@@ -178,10 +221,19 @@ export default function PlantDetailScreen({ route, navigation }) {
         ];
     };
 
+    // =============================================================================
+    // DERIVED DATA
+    // =============================================================================
+
     const hasCustomImage = ['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(item.plantId);
+
+    // =============================================================================
+    // RENDER
+    // =============================================================================
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header met navigatie en coins */}
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
@@ -201,6 +253,7 @@ export default function PlantDetailScreen({ route, navigation }) {
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
+                    {/* Plant weergave sectie */}
                     <View style={styles.plantDisplay}>
                         <View style={styles.plantContainer}>
                             <View style={styles.plantImageWrapper}>
@@ -210,6 +263,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                                         style={styles.plantDetailImage}
                                         resizeMode="contain"
                                     />
+                                    {/* Emoji overlay voor planten zonder custom afbeelding */}
                                     {!hasCustomImage && (
                                         <View style={styles.plantDetailEmojiOverlay}>
                                             <Text style={styles.plantDetailEmojiText}>{plant.emoji}</Text>
@@ -225,11 +279,13 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
+                    {/* Beschrijving sectie */}
                     <View style={styles.infoSection}>
                         <Text style={styles.sectionTitle}>📖 Description</Text>
                         <Text style={styles.description}>{plant.description}</Text>
                     </View>
 
+                    {/* Details sectie */}
                     <View style={styles.detailsSection}>
                         <Text style={styles.sectionTitle}>ℹ️ Details</Text>
                         <View style={styles.detailsGrid}>
@@ -260,6 +316,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
+                    {/* Fun facts sectie */}
                     <View style={styles.factsSection}>
                         <Text style={styles.sectionTitle}>🌱 Fun Facts</Text>
                         <View style={styles.factsList}>
@@ -269,6 +326,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
+                    {/* Voortgang sectie */}
                     <View style={styles.progressSection}>
                         <Text style={styles.sectionTitle}>📊 Collection Progress</Text>
                         <View style={styles.progressContent}>
@@ -289,6 +347,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                         </View>
                     </View>
 
+                    {/* Care tips sectie */}
                     <View style={styles.careSection}>
                         <Text style={styles.sectionTitle}>💡 Care Tips</Text>
                         <View style={styles.careTips}>
@@ -313,6 +372,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                 </View>
             </ScrollView>
 
+            {/* Bottom action buttons */}
             <View style={styles.bottomActions}>
                 <TouchableOpacity
                     style={styles.actionButton}

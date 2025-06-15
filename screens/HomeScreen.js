@@ -1,3 +1,9 @@
+// =============================================================================
+// screens/HomeScreen.js - Startscherm van de app
+// =============================================================================
+// Dit scherm toont een overzicht van actieve uitdagingen en navigatie naar
+// de hoofdfuncties: verzamelen van planten en bekijken van collectie.
+
 import React from 'react';
 import {
     Image,
@@ -11,8 +17,10 @@ import {
 import { useAppState } from '../context/AppContext';
 
 export default function HomeScreen({ navigation }) {
+    // Haal globale app state op
     const { coins, collection, challenges } = useAppState();
 
+    // Toon maximaal 2 actieve uitdagingen op het startscherm
     const activeChallenges = challenges.filter(c => !c.completed).slice(0, 2);
 
     return (
@@ -23,6 +31,7 @@ export default function HomeScreen({ navigation }) {
                 resizeMode="cover"
             >
                 <View style={styles.overlay}>
+                    {/* App logo */}
                     <View style={styles.logoContainer}>
                         <Image
                             source={require('../assets/images/TextAndSymbols/FloralTroveText.png')}
@@ -31,12 +40,14 @@ export default function HomeScreen({ navigation }) {
                         />
                     </View>
 
+                    {/* Uitdagingen sectie */}
                     <View style={styles.challengesSection}>
                         <View style={styles.challengesHeader}>
                             <Text style={styles.challengesIcon}>🎯</Text>
                             <Text style={styles.challengesTitle}>Your Challenges</Text>
                         </View>
 
+                        {/* Toon actieve uitdagingen met voortgangsbalk */}
                         {activeChallenges.map((challenge) => {
                             const progressPercentage = Math.min((challenge.progress / challenge.target) * 100, 100);
 
@@ -58,6 +69,7 @@ export default function HomeScreen({ navigation }) {
                             );
                         })}
 
+                        {/* Link naar volledige uitdagingen pagina */}
                         <TouchableOpacity
                             style={styles.viewAllButton}
                             onPress={() => navigation.navigate('Challenges')}
@@ -66,7 +78,9 @@ export default function HomeScreen({ navigation }) {
                         </TouchableOpacity>
                     </View>
 
+                    {/* Hoofdactie knoppen */}
                     <View style={styles.actionButtons}>
+                        {/* Primaire actie: verzamelen van planten */}
                         <TouchableOpacity
                             style={styles.collectButton}
                             onPress={() => navigation.navigate('Camera')}
@@ -74,6 +88,7 @@ export default function HomeScreen({ navigation }) {
                             <Text style={styles.collectButtonText}>Collect now</Text>
                         </TouchableOpacity>
 
+                        {/* Secundaire actie: bekijk collectie */}
                         <TouchableOpacity
                             style={styles.collectionButton}
                             onPress={() => navigation.navigate('Collection')}

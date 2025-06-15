@@ -1,15 +1,26 @@
+// =============================================================================
+// context/AppContext.js - Globale state management
+// =============================================================================
+// Dit bestand beheert alle app-brede state: coins, collectie, uitdagingen, potten.
+// Gebruikt React's useReducer voor complexe state updates en Context API voor toegang.
+
 import React, { createContext, useContext, useMemo, useReducer } from 'react';
 
+// =============================================================================
+// INITIËLE STATE EN DATA DEFINITIES
+// =============================================================================
+
+// Startwaarden bij eerste gebruik van de app
 const initialState = {
-    coins: 100,
-    collection: [],
-    challenges: [
+    coins: 100,                    // Startkapitaal voor gebruiker
+    collection: [],                // Array van verzamelde planten (leeg bij start)
+    challenges: [                  // Voorgedefinieerde uitdagingen met voortgang
         {
             id: 1,
             title: "First Discovery",
-            target: 1,
-            progress: 0,
-            reward: 50,
+            target: 1,             // Doel: 1 plant vinden
+            progress: 0,           // Huidige voortgang
+            reward: 50,            // Beloning in coins
             completed: false
         },
         {
@@ -31,17 +42,17 @@ const initialState = {
         {
             id: 4,
             title: "Master Collector",
-            target: 4,
+            target: 4,             // Alle 4 ondersteunde bloemen
             progress: 0,
-            reward: 300,
+            reward: 300,           // Grootste beloning
             completed: false
         }
     ],
-    unlockedPots: ['basic'],
-    activePotType: 'basic'
+    unlockedPots: ['basic'],       // Beschikbare pot types (basic is altijd gratis)
+    activePotType: 'basic'         // Huidige actieve pot voor nieuwe planten
 };
 
-// Alleen de 4 bloemen waarvoor de afbeeldingen werken
+// Ondersteunde planten data - moet overeenkomen met PlantNet API mapping
 const plantData = [
     {
         id: 'cornflower',
@@ -77,23 +88,29 @@ const plantData = [
     }
 ];
 
+// Pot types die gekocht kunnen worden in de winkel
 const potData = [
     {
         id: 'basic',
         name: 'Basic Clay Pot',
         description: 'A simple terracotta pot perfect for starting your collection.',
-        price: 0,
+        price: 0,              // Gratis pot
         unlocked: true
     },
     {
         id: 'round',
         name: 'Round Ceramic Pot',
         description: 'A beautiful round ceramic pot with smooth curves and elegant design.',
-        price: 200,
+        price: 200,            // Kost 200 coins
         unlocked: false
     }
 ];
 
+// =============================================================================
+// STATE MANAGEMENT SETUP
+// =============================================================================
+
+// Action types voor reducer
 const actionTypes = {
     ADD_PLANT: 'ADD_PLANT',
     ADD_COINS: 'ADD_COINS',
@@ -105,18 +122,20 @@ const actionTypes = {
     CHANGE_ALL_POTS: 'CHANGE_ALL_POTS'
 };
 
+// Hoofdreducer functie - beheert alle state updates
 function appReducer(state, action) {
     switch (action.type) {
         case actionTypes.ADD_PLANT: {
             const plant = plantData.find(p => p.id === action.plantId);
             if (!plant) return state;
 
-            // Check if plant is already in collection
+            // Voorkom duplicaten in collectie
             const plantAlreadyExists = state.collection.some(item => item.plantId === action.plantId);
             if (plantAlreadyExists) {
-                return state; // Don't add duplicate plants
+                return state;
             }
 
+            // Maak nieuw collectie item met timestamp
             const newItem = {
                 id: Date.now().toString(),
                 plantId: action.plantId,
@@ -124,6 +143,7 @@ function appReducer(state, action) {
                 discoveredAt: new Date().toISOString()
             };
 
+            // Update uitdagingen voortgang
             const updatedChallenges = state.challenges.map(challenge => {
                 if (!challenge.completed) {
                     const newProgress = challenge.progress + 1;
@@ -137,6 +157,7 @@ function appReducer(state, action) {
                 return challenge;
             });
 
+            // Bereken totale coins: plant waarde + voltooide uitdaging beloningen
             let coinsToAdd = plant.coins;
             const newlyCompletedChallenges = updatedChallenges.filter(
                 (challenge, index) =>
@@ -166,6 +187,7 @@ function appReducer(state, action) {
 
         case actionTypes.BUY_POT: {
             const pot = potData.find(p => p.id === action.potId);
+            // Controleer geldigheid: pot bestaat, niet al gekocht, genoeg coins
             if (!pot || state.unlockedPots.includes(action.potId) || state.coins < pot.price) {
                 return state;
             }
@@ -184,6 +206,7 @@ function appReducer(state, action) {
             };
 
         case actionTypes.CHANGE_ALL_POTS:
+            // Update alle planten in collectie naar nieuwe pot
             return {
                 ...state,
                 collection: state.collection.map(item => ({
@@ -198,13 +221,19 @@ function appReducer(state, action) {
     }
 }
 
+// =============================================================================
+// CONTEXT PROVIDERS EN HOOKS
+// =============================================================================
+
 const AppStateContext = createContext();
 const AppDispatchContext = createContext();
 
 export function AppProvider({ children }) {
     const [state, dispatch] = useReducer(appReducer, initialState);
 
+    // Action creators - functies voor state updates
     const actions = useMemo(() => ({
+        // Voeg plant toe aan collectie
         addPlantToCollection: (plantId, potId) => {
             const plant = plantData.find(p => p.id === plantId);
             if (!plant) return false;
@@ -217,6 +246,7 @@ export function AppProvider({ children }) {
             return true;
         },
 
+        // Coin management
         addCoins: (amount) => {
             dispatch({
                 type: actionTypes.ADD_COINS,
@@ -235,6 +265,7 @@ export function AppProvider({ children }) {
             return false;
         },
 
+        // Pot management
         buyPot: (potId) => {
             const pot = potData.find(p => p.id === potId);
             if (!pot || state.unlockedPots.includes(potId) || state.coins < pot.price) {
@@ -270,9 +301,11 @@ export function AppProvider({ children }) {
             return false;
         },
 
+        // Helper functies voor data toegang
         getPlantData: () => plantData,
         getPotData: () => potData,
 
+        // Image helpers (fallback emojis)
         getPlantImage: (plantId, potId) => {
             const plant = plantData.find(p => p.id === plantId);
             return plant ? plant.emoji : '🌸';
@@ -287,6 +320,7 @@ export function AppProvider({ children }) {
         }
     }), [state]);
 
+    // Selector functies voor derived state
     const selectors = useMemo(() => ({
         activeChallenges: state.challenges.filter(c => !c.completed),
         completedChallenges: state.challenges.filter(c => c.completed).length,
@@ -306,6 +340,7 @@ export function AppProvider({ children }) {
     );
 }
 
+// Custom hooks voor context toegang
 export function useAppState() {
     const context = useContext(AppStateContext);
     if (!context) {
@@ -330,6 +365,7 @@ export function useAppSelectors() {
     return context.selectors;
 }
 
+// Legacy hook voor backwards compatibility
 export function useAppContext() {
     const state = useAppState();
     const { actions } = useAppActions();

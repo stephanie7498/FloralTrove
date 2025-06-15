@@ -1,293 +1,892 @@
-// services/PlantNetAPI.js
-import { Alert } from 'react-native';
+// =============================================================================
+// screens/CameraScreen.js - Plant foto herkenning scherm
+// =============================================================================
+// Dit scherm beheert foto selectie (camera/bibliotheek), PlantNet API calls,
+// en toont resultaten van plant identificatie met success/failure feedback.
 
-const PLANTNET_API_KEY = '2b103cFgNLqBWUbz2wBVn7Ddoe';
-const PLANTNET_API_URL = 'https://my-api.plantnet.org/v2/identify/all';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    ImageBackground,
+    Modal,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { useAppActions, useAppState } from '../context/AppContext';
+import PlantNetAPI from '../services/PlantNetAPI';
 
-class PlantNetAPI {
-    constructor() {
-        this.apiKey = PLANTNET_API_KEY;
-        this.baseUrl = PLANTNET_API_URL;
-    }
+export default function CameraScreen({ navigation }) {
+    // =============================================================================
+    // COMPONENT STATE
+    // =============================================================================
+
+    const [isProcessing, setIsProcessing] = useState(false);           // API call in progress
+    const [showFoundModal, setShowFoundModal] = useState(false);       // Success modal zichtbaar
+    const [foundPlant, setFoundPlant] = useState(null);               // Succesvol geïdentificeerde plant
+    const [foundPotId, setFoundPotId] = useState('basic');            // Pot type voor nieuwe plant
+    const [showInstructions, setShowInstructions] = useState(false);   // Instructies modal
+    const [recognitionFailed, setRecognitionFailed] = useState(false); // Herkenning mislukt
+    const [identificationResult, setIdentificationResult] = useState(null); // API resultaat data
+
+    // Context data
+    const { collection } = useAppState();
+    const { addPlantToCollection, getPlantData } = useAppActions();
+
+    // =============================================================================
+    // AFBEELDING HELPERS
+    // =============================================================================
 
     /**
-     * Request user permission before sending data to PlantNet
+     * Haal juiste afbeelding op voor plant (prioriteit aan GIFs in found modal)
+     * @param {string} plantId - Plant identifier
+     * @param {string} potId - Pot type identifier  
+     * @returns {Object} - React Native image require object
      */
-    async requestPermission() {
-        return new Promise((resolve) => {
-            Alert.alert(
-                "🌸 Plant Identification",
-                "We'll send your photo to PlantNet (a scientific plant identification service) to identify the flower. This helps improve plant research!\n\n• Your photo will be processed securely\n• PlantNet is based in France (GDPR compliant)\n• Data is used for scientific research\n• No personal data is shared",
-                [
-                    {
-                        text: "Cancel",
-                        style: "cancel",
-                        onPress: () => resolve(false)
-                    },
-                    {
-                        text: "Identify Plant",
-                        style: "default",
-                        onPress: () => resolve(true)
-                    }
-                ]
-            );
-        });
-    }
-
-    /**
-     * Identify a plant from an image using PlantNet API
-     * @param {string} imageUri - URI of the image to identify
-     * @param {Array} organs - Plant organs visible in image (only first one will be used)
-     */
-    async identifyPlant(imageUri, organs = ['flower']) {
-        try {
-            console.log('🔍 Starting PlantNet identification...');
-            console.log('📍 API URL:', `${this.baseUrl}?api-key=${this.apiKey}`);
-            console.log('📸 Image URI:', imageUri);
-
-            // Create form data
-            const formData = new FormData();
-
-            // Add image to form data
-            formData.append('images', {
-                uri: imageUri,
-                type: 'image/jpeg',
-                name: 'plant_photo.jpg'
-            });
-
-            // FIXED: Add only ONE organ for ONE image (PlantNet v2 requirement)
-            // Use first organ from array, default to 'flower'
-            const selectedOrgan = organs[0] || 'flower';
-            formData.append('organs', selectedOrgan);
-
-            console.log('🔍 Using organ type:', selectedOrgan);
-            console.log('📤 Sending request to PlantNet (v2 API) - 1 image, 1 organ...');
-
-            // Make API request
-            const response = await fetch(`${this.baseUrl}?api-key=${this.apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    // Don't set Content-Type for FormData - let fetch set it automatically
-                },
-                body: formData,
-            });
-
-            console.log('📡 PlantNet response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ PlantNet API error:', response.status, errorText);
-
-                // Handle specific error cases
-                if (response.status === 404) {
-                    throw new Error('PlantNet API endpoint not found. Please check API configuration.');
-                } else if (response.status === 401) {
-                    throw new Error('Invalid API key. Please check your PlantNet API key.');
-                } else if (response.status === 429) {
-                    throw new Error('Too many requests. Please try again later.');
-                } else if (response.status === 400) {
-                    throw new Error('Bad request format. Please try again with a different image.');
-                } else {
-                    throw new Error(`PlantNet API error: ${response.status} - ${errorText}`);
-                }
-            }
-
-            const data = await response.json();
-            console.log('✅ PlantNet identification SUCCESS!');
-            console.log('📊 Results found:', data.results?.length || 0, 'species');
-
-            if (data.results && data.results.length > 0) {
-                console.log('🎯 Top 3 results:');
-                data.results.slice(0, 3).forEach((result, index) => {
-                    const confidence = (result.score * 100).toFixed(1);
-                    const scientificName = result.species.scientificNameWithoutAuthor;
-                    console.log(`  ${index + 1}. ${scientificName} (${confidence}%)`);
-                });
-            }
-
-            return this.processResults(data);
-
-        } catch (error) {
-            console.error('❌ Error identifying plant:', error);
-
-            // Provide user-friendly error messages
-            if (error.message.includes('network') || error.message.includes('Network')) {
-                throw new Error('Network connection error. Please check your internet connection.');
-            } else if (error.message.includes('404')) {
-                throw new Error('Plant identification service is currently unavailable.');
-            } else if (error.message.includes('401')) {
-                throw new Error('Authentication error. Please try again later.');
-            } else if (error.message.includes('400')) {
-                throw new Error('Invalid image format. Please try a different photo.');
-            } else {
-                throw error;
-            }
+    const getPlantImageDirect = (plantId, potId = 'basic') => {
+        // Voor found modal: gebruik GIFs waar beschikbaar
+        if (plantId === 'cornflower') {
+            return require('../assets/plantgifs/cornflower.gif');
         }
-    }
-
-    /**
-     * Process PlantNet API results and map to our app's plant data
-     */
-    processResults(apiResponse) {
-        try {
-            if (!apiResponse.results || apiResponse.results.length === 0) {
-                return {
-                    success: false,
-                    message: 'No plants identified in this image',
-                    confidence: 0,
-                    plantId: null
-                };
-            }
-
-            // Get the best match
-            const bestMatch = apiResponse.results[0];
-            const confidence = bestMatch.score * 100; // Convert to percentage
-
-            console.log('🏆 BEST MATCH:', bestMatch.species.scientificNameWithoutAuthor);
-            console.log('📈 Confidence:', confidence.toFixed(1) + '%');
-
-            // Map PlantNet results to our app's plants
-            const mappedPlant = this.mapToAppPlant(bestMatch, confidence);
-
-            if (mappedPlant) {
-                console.log('✅ SUCCESSFUL MAPPING to app plant:', mappedPlant.plantId);
-                return {
-                    success: true,
-                    plantId: mappedPlant.plantId,
-                    confidence: confidence,
-                    scientificName: bestMatch.species.scientificNameWithoutAuthor,
-                    commonNames: bestMatch.species.commonNames || [],
-                    message: `Found ${mappedPlant.commonName} with ${confidence.toFixed(1)}% confidence`
-                };
-            } else {
-                console.log('❌ No mapping found - plant not in our collection');
-                return {
-                    success: false,
-                    message: 'This plant is not in our collection yet',
-                    confidence: confidence,
-                    scientificName: bestMatch.species.scientificNameWithoutAuthor,
-                    plantId: null
-                };
-            }
-
-        } catch (error) {
-            console.error('❌ Error processing PlantNet results:', error);
-            return {
-                success: false,
-                message: 'Error processing identification results',
-                confidence: 0,
-                plantId: null
-            };
-        }
-    }
-
-    /**
-     * Map PlantNet scientific names to our app's plant IDs
-     */
-    mapToAppPlant(plantNetResult, confidence) {
-        const scientificName = plantNetResult.species.scientificNameWithoutAuthor.toLowerCase();
-        const commonNames = (plantNetResult.species.commonNames || [])
-            .map(name => name.toLowerCase());
-
-        console.log('🔍 Mapping scientific name:', scientificName);
-        console.log('🔍 Common names:', commonNames);
-
-        // Accept matches with >10% confidence for testing
-        if (confidence < 10) {
-            console.log('⚠️ Confidence too low:', confidence + '%');
-            return null;
+        if (plantId === 'poppy') {
+            return require('../assets/plantgifs/poppy.gif');
         }
 
-        // Mapping rules for flowers in our app
-        const plantMappings = [
-            // Cornflower mappings
-            {
-                scientificNames: ['centaurea cyanus'],
-                commonNames: ['cornflower', 'bachelor button', 'blue bottle', 'boutonniere flower'],
-                plantId: 'cornflower',
-                commonName: 'Cornflower'
+        // Static images voor bestaande planten
+        const imageMap = {
+            cornflower: {
+                basic: require('../assets/images/plants/cornflower_basic_pot.png'),
+                round: require('../assets/images/plants/cornflower_round_pot.png'),
             },
-            // Daisy mappings  
-            {
-                scientificNames: ['bellis perennis', 'leucanthemum vulgare', 'chrysanthemum leucanthemum'],
-                commonNames: ['common daisy', 'english daisy', 'lawn daisy', 'white daisy', 'oxeye daisy'],
-                plantId: 'daisy',
-                commonName: 'Daisy'
+            daisy: {
+                basic: require('../assets/images/plants/daisy_basic_pot.png'),
+                round: require('../assets/images/plants/daisy_round_pot.png'),
             },
-            // Poppy mappings
-            {
-                scientificNames: ['papaver rhoeas', 'papaver dubium', 'papaver somniferum'],
-                commonNames: ['corn poppy', 'field poppy', 'red poppy', 'common poppy', 'flanders poppy'],
-                plantId: 'poppy',
-                commonName: 'Poppy'
+            poppy: {
+                basic: require('../assets/images/plants/poppy_basic_pot.png'),
+                round: require('../assets/images/plants/poppy_round_pot.png'),
             },
-            // Bladder Campion (Blaussilene) mappings
-            {
-                scientificNames: ['silene vulgaris', 'silene latifolia'],
-                commonNames: ['bladder campion', 'white campion', 'maiden\'s tears', 'cowbell'],
-                plantId: 'blaussilene',
-                commonName: 'Bladder Campion'
-            },
-            // Yellow Daisy (Gele Ganzenbloem) mappings
-            {
-                scientificNames: ['leucanthemum vulgare', 'rudbeckia hirta', 'helianthus annuus', 'chrysanthemum segetum'],
-                commonNames: ['yellow daisy', 'corn marigold', 'black-eyed susan', 'golden daisy', 'yellow chamomile'],
-                plantId: 'gele_ganzenbloem',
-                commonName: 'Yellow Daisy'
-            },
-            // Knapweed (Knoopkruid) mappings
-            {
-                scientificNames: ['centaurea scabiosa', 'centaurea nigra', 'centaurea jacea'],
-                commonNames: ['greater knapweed', 'common knapweed', 'black knapweed', 'brown knapweed', 'hardheads'],
-                plantId: 'knoopkruid',
-                commonName: 'Knapweed'
-            },
-            // Red Clover (Rode Klaver) mappings
-            {
-                scientificNames: ['trifolium pratense', 'trifolium repens'],
-                commonNames: ['red clover', 'purple clover', 'meadow clover', 'cow clover', 'trefoil'],
-                plantId: 'rode_klaver',
-                commonName: 'Red Clover'
+            gele_ganzenbloem: {
+                basic: require('../assets/images/plants/gele_ganzenbloem_basic_pot.png'),
+                round: require('../assets/images/plants/gele_ganzenbloem_round_pot.png'),
             }
-        ];
-
-        // Check each mapping
-        for (const mapping of plantMappings) {
-            // Check scientific name match
-            const scientificMatch = mapping.scientificNames.some(name =>
-                scientificName.includes(name) || name.includes(scientificName)
-            );
-
-            // Check common name match
-            const commonMatch = commonNames.some(userCommon =>
-                mapping.commonNames.some(mappingCommon =>
-                    userCommon.includes(mappingCommon) || mappingCommon.includes(userCommon)
-                )
-            );
-
-            if (scientificMatch || commonMatch) {
-                console.log('✅ MATCHED to app plant:', mapping.plantId, '(' + mapping.commonName + ')');
-                return mapping;
-            }
-        }
-
-        console.log('❌ No mapping found for:', scientificName);
-        return null;
-    }
-
-    /**
-     * Get info about PlantNet service for user
-     */
-    getServiceInfo() {
-        return {
-            name: 'PlantNet',
-            description: 'PlantNet is a citizen science project that helps identify plants through photos. It\'s developed by French research institutions and helps advance botanical research.',
-            website: 'https://plantnet.org',
-            privacy: 'GDPR compliant, based in France, data used for scientific research',
-            accuracy: 'Very high for common European plants and flowers'
         };
-    }
+
+        // Fallback logica
+        if (imageMap[plantId] && imageMap[plantId][potId]) {
+            return imageMap[plantId][potId];
+        }
+
+        if (imageMap[plantId] && imageMap[plantId]['basic']) {
+            return imageMap[plantId]['basic'];
+        }
+
+        // Voor nieuwe planten zonder afbeeldingen: basic pot als fallback
+        return require('../assets/images/pots/basic_pot.png');
+    };
+
+    /**
+     * Haal lijst van al verzamelde plant IDs op
+     * @returns {Array} - Array van plant IDs in collectie
+     */
+    const getCollectedPlantIds = () => {
+        return collection.map(item => item.plantId);
+    };
+
+    // =============================================================================
+    // FOTO SELECTIE FUNCTIONALITEIT
+    // =============================================================================
+
+    /**
+     * Hoofdfunctie: start foto selectie en identificatie proces
+     * Beheert camera/bibliotheek keuze en permissies
+     */
+    const takePictureAndIdentify = async () => {
+        if (isProcessing) return;
+
+        try {
+            // Vraag permissies voor camera en fotobibliotheek
+            const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+            const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            // Camera beschikbaar (echte device)
+            if (cameraStatus === 'granted') {
+                Alert.alert(
+                    "Select Photo Source",
+                    "Choose how you want to add a photo for plant identification:",
+                    [
+                        {
+                            text: "Take Photo",
+                            onPress: async () => {
+                                try {
+                                    const result = await ImagePicker.launchCameraAsync({
+                                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                        allowsEditing: true,
+                                        aspect: [1, 1],
+                                        quality: 0.8,
+                                    });
+                                    if (!result.canceled) {
+                                        processImage(result.assets[0].uri);
+                                    }
+                                } catch (error) {
+                                    // Camera gefaald (waarschijnlijk simulator), val terug op bibliotheek
+                                    console.log('📱 Camera not available, using photo library...');
+                                    launchPhotoLibrary();
+                                }
+                            }
+                        },
+                        {
+                            text: "Choose from Library",
+                            onPress: () => launchPhotoLibrary()
+                        },
+                        {
+                            text: "Cancel",
+                            style: "cancel"
+                        }
+                    ]
+                );
+            } else if (libraryStatus === 'granted') {
+                // Alleen fotobibliotheek beschikbaar (simulator)
+                launchPhotoLibrary();
+            } else {
+                Alert.alert(
+                    'Permissions Required',
+                    'Please allow photo access to identify plants.',
+                    [{ text: 'OK' }]
+                );
+            }
+
+        } catch (error) {
+            console.error('❌ Error during image selection:', error);
+            Alert.alert(
+                'Error',
+                'Could not access camera or photo library. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
+    };
+
+    /**
+     * Start fotobibliotheek voor afbeelding selectie
+     */
+    const launchPhotoLibrary = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                processImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('❌ Error launching photo library:', error);
+            Alert.alert(
+                'Error',
+                'Could not access photo library. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
+    };
+
+    // =============================================================================
+    // PLANT IDENTIFICATIE PROCES
+    // =============================================================================
+
+    /**
+     * Verwerk geselecteerde afbeelding en start plant identificatie
+     * @param {string} imageUri - URI van geselecteerde afbeelding
+     */
+    const processImage = async (imageUri) => {
+        console.log('📸 Image selected:', imageUri);
+
+        // Vraag gebruiker toestemming voor PlantNet API
+        const hasPermission = await PlantNetAPI.requestPermission();
+        if (!hasPermission) {
+            Alert.alert(
+                'Identification Cancelled',
+                'Photo was not sent for identification. You can try selecting another picture.',
+                [{ text: 'OK' }]
+            );
+            return;
+        }
+
+        // Reset state en start processing
+        setIsProcessing(true);
+        setRecognitionFailed(false);
+        setIdentificationResult(null);
+
+        try {
+            // Start plant identificatie via PlantNet API
+            console.log('🔍 Starting plant identification...');
+            const identificationResult = await PlantNetAPI.identifyPlant(imageUri, ['flower', 'leaf']);
+
+            setIdentificationResult(identificationResult);
+            setIsProcessing(false);
+
+            if (identificationResult.success && identificationResult.plantId) {
+                // Succesvol geïdentificeerd - controleer duplicaten
+                const collectedPlantIds = getCollectedPlantIds();
+                if (collectedPlantIds.includes(identificationResult.plantId)) {
+                    Alert.alert(
+                        'Already Collected! 🌸',
+                        `You already have a ${identificationResult.plantId} in your collection!\n\nTry finding a different type of flower.`,
+                        [{ text: 'OK' }]
+                    );
+                    return;
+                }
+
+                // Voeg plant toe aan collectie
+                const plants = getPlantData();
+                const plant = plants.find(p => p.id === identificationResult.plantId);
+
+                if (plant) {
+                    const wasAdded = addPlantToCollection(identificationResult.plantId);
+
+                    if (wasAdded) {
+                        // Toon success modal
+                        setFoundPlant(plant);
+                        setFoundPotId('basic');
+                        setShowFoundModal(true);
+
+                        console.log(`✅ Successfully identified: ${plant.name} (${identificationResult.confidence.toFixed(1)}% confidence)`);
+                    } else {
+                        setRecognitionFailed(true);
+                    }
+                } else {
+                    setRecognitionFailed(true);
+                }
+            } else {
+                // Herkenning mislukt - toon gedetailleerde foutmelding
+                let failureMessage = 'Could not identify this plant.';
+
+                if (identificationResult.scientificName) {
+                    failureMessage = `Found "${identificationResult.scientificName}" but this plant is not in our collection yet.\n\nWe currently collect: Cornflowers, Daisies, Poppies, and Yellow Daisies.`;
+                } else if (identificationResult.confidence > 0) {
+                    failureMessage = `Plant detected but confidence too low (${identificationResult.confidence.toFixed(1)}%).\n\nTry selecting a clearer photo with good lighting.`;
+                }
+
+                Alert.alert(
+                    'Plant Not Recognized 🔍',
+                    failureMessage,
+                    [
+                        { text: 'Try Again', style: 'default' },
+                        {
+                            text: 'View Collection Guide',
+                            style: 'default',
+                            onPress: () => setShowInstructions(true)
+                        }
+                    ]
+                );
+                setRecognitionFailed(true);
+            }
+
+        } catch (error) {
+            console.error('❌ Error during plant identification:', error);
+            setIsProcessing(false);
+
+            // Gebruiksvriendelijke foutmeldingen
+            let errorMessage = 'Something went wrong during plant identification.';
+
+            if (error.message?.includes('network') || error.message?.includes('fetch')) {
+                errorMessage = 'Network error. Please check your internet connection and try again.';
+            } else if (error.message?.includes('API')) {
+                errorMessage = 'Plant identification service is temporarily unavailable. Please try again later.';
+            }
+
+            Alert.alert(
+                'Identification Failed',
+                errorMessage,
+                [{ text: 'OK' }]
+            );
+            setRecognitionFailed(true);
+        }
+    };
+
+    // =============================================================================
+    // MODAL MANAGEMENT
+    // =============================================================================
+
+    /**
+     * Sluit success modal en reset state
+     */
+    const closeFoundModal = () => {
+        setShowFoundModal(false);
+        setFoundPlant(null);
+        setFoundPotId('basic');
+    };
+
+    // =============================================================================
+    // RENDER
+    // =============================================================================
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <ImageBackground
+                source={require('../assets/images/backgrounds/background_challenges.png')}
+                style={styles.cameraView}
+                resizeMode="cover"
+            >
+                <View style={styles.cameraOverlay}>
+                    {/* Header met back button en info */}
+                    <View style={styles.topBar}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backText}>←</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.infoButton}
+                            onPress={() => setShowInstructions(true)}
+                        >
+                            <Text style={styles.infoText}>How it works</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Camera viewfinder gebied */}
+                    <View style={styles.viewfinderContainer}>
+                        <View style={styles.viewfinder}>
+                            {/* Viewfinder hoeken */}
+                            <View style={styles.viewfinderCorner} />
+                            <View style={[styles.viewfinderCorner, styles.topRight]} />
+                            <View style={[styles.viewfinderCorner, styles.bottomLeft]} />
+                            <View style={[styles.viewfinderCorner, styles.bottomRight]} />
+
+                            {/* Default instructie tekst */}
+                            {!isProcessing && !recognitionFailed && (
+                                <View style={styles.centerText}>
+                                    <Text style={styles.instructionText}>Tap 'Select Photo' to take</Text>
+                                    <Text style={styles.instructionText}>or choose a flower image</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Processing indicator */}
+                        {isProcessing && (
+                            <View style={styles.processingContainer}>
+                                <ActivityIndicator size="large" color="#fff" />
+                                <Text style={styles.processingText}>Identifying plant...</Text>
+                                <Text style={styles.processingSubtext}>Using PlantNet AI 🤖</Text>
+                            </View>
+                        )}
+
+                        {/* Failure state */}
+                        {recognitionFailed && (
+                            <View style={styles.failureContainer}>
+                                <Text style={styles.failureTitle}>
+                                    {getCollectedPlantIds().length >= 4 ?
+                                        "All flowers collected!" :
+                                        "Cannot recognize flower."
+                                    }
+                                </Text>
+                                {getCollectedPlantIds().length >= 4 ? (
+                                    <TouchableOpacity
+                                        style={styles.tryAgainButton}
+                                        onPress={() => navigation.navigate('Collection')}
+                                    >
+                                        <Text style={styles.tryAgainText}>View Collection</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.tryAgainButton}
+                                        onPress={() => setRecognitionFailed(false)}
+                                    >
+                                        <Text style={styles.tryAgainText}>Try again</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Bottom controls */}
+                    <View style={styles.bottomControls}>
+                        <TouchableOpacity
+                            style={[styles.captureButton, isProcessing && styles.captureButtonDisabled]}
+                            onPress={takePictureAndIdentify}
+                            disabled={isProcessing}
+                        >
+                            <Text style={styles.captureIcon}>📸</Text>
+                            <Text style={styles.captureText}>Select Photo</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </ImageBackground>
+
+            {/* Success Modal - toont gevonden plant */}
+            <Modal
+                visible={showFoundModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={closeFoundModal}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>
+                            You found a {foundPlant?.name}!
+                        </Text>
+
+                        {/* Plant afbeelding */}
+                        <View style={styles.modalPlant}>
+                            {foundPlant && (
+                                <View style={styles.modalPlantContainer}>
+                                    <Image
+                                        source={getPlantImageDirect(foundPlant.id, foundPotId)}
+                                        style={styles.modalPlantImage}
+                                        resizeMode="contain"
+                                    />
+                                    {/* Emoji overlay voor planten zonder custom afbeelding */}
+                                    {!['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(foundPlant.id) && (
+                                        <View style={styles.modalPlantEmojiOverlay}>
+                                            <Text style={styles.modalPlantEmojiText}>{foundPlant.emoji}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Coin reward */}
+                        <View style={styles.coinReward}>
+                            <Text style={styles.coinRewardText}>+{foundPlant?.coins} coins! 🪙</Text>
+                        </View>
+
+                        {/* AI confidence indicator */}
+                        {identificationResult && (
+                            <View style={styles.confidenceContainer}>
+                                <Text style={styles.confidenceText}>
+                                    🤖 AI Confidence: {identificationResult.confidence.toFixed(1)}%
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Action buttons */}
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalButton}
+                                onPress={() => {
+                                    closeFoundModal();
+                                    navigation.navigate('Collection');
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>To collection</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonSecondary]}
+                                onPress={closeFoundModal}
+                            >
+                                <Text style={styles.modalButtonText}>Collect More</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Instructions Modal - uitleg over hoe de app werkt */}
+            <Modal
+                visible={showInstructions}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowInstructions(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.instructionsContent}>
+                        <Text style={styles.instructionsTitle}>How it works</Text>
+                        <Text style={styles.instructionsText}>
+                            Take or select a clear photo of a flower for AI identification{'\n\n'}
+                            📸 How it works:{'\n'}
+                            • Tap 'Select Photo' to choose image source{'\n'}
+                            • Take new photo OR choose from library{'\n'}
+                            • Select a clear, well-lit flower image{'\n'}
+                            • We'll ask permission to identify it{'\n'}
+                            • PlantNet AI will identify the species{'\n\n'}
+                            🌸 We can find:{'\n'}
+                            🌾 Cornflowers - Blue wildflowers{'\n'}
+                            🌼 Daisies - White with yellow centers{'\n'}
+                            🌺 Poppies - Vibrant red blooms{'\n'}
+                            🌻 Yellow Daisy - Bright yellow flowers{'\n\n'}
+                            💡 Tips for best results:{'\n'}
+                            • Use good lighting (natural light works best){'\n'}
+                            • Get close to the flower{'\n'}
+                            • Make sure the flower is clearly visible{'\n'}
+                            • Avoid blurry photos{'\n'}
+                            • Try different images if first attempt fails{'\n\n'}
+                            📱 Works on simulator: Choose photos from your library!{'\n\n'}
+                            🔒 Privacy: Your photo is sent to PlantNet (France) for identification. This helps botanical research!
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.okButton}
+                            onPress={() => setShowInstructions(false)}
+                        >
+                            <Text style={styles.okButtonText}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </SafeAreaView>
+    );
 }
 
-export default new PlantNetAPI();
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
+    cameraView: {
+        flex: 1,
+    },
+    cameraOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    },
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 60,
+        paddingBottom: 20,
+    },
+    backButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    backText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    infoButton: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    infoText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    viewfinderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    viewfinder: {
+        width: 250,
+        height: 250,
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    viewfinderCorner: {
+        position: 'absolute',
+        width: 30,
+        height: 30,
+        borderColor: '#4CAF50',
+        top: 0,
+        left: 0,
+        borderTopWidth: 4,
+        borderLeftWidth: 4,
+        borderTopLeftRadius: 8,
+    },
+    topRight: {
+        top: 0,
+        right: 0,
+        left: 'auto',
+        borderTopWidth: 4,
+        borderRightWidth: 4,
+        borderLeftWidth: 0,
+        borderTopRightRadius: 8,
+    },
+    bottomLeft: {
+        bottom: 0,
+        top: 'auto',
+        borderBottomWidth: 4,
+        borderLeftWidth: 4,
+        borderTopWidth: 0,
+        borderBottomLeftRadius: 8,
+    },
+    bottomRight: {
+        bottom: 0,
+        right: 0,
+        top: 'auto',
+        left: 'auto',
+        borderBottomWidth: 4,
+        borderRightWidth: 4,
+        borderTopWidth: 0,
+        borderLeftWidth: 0,
+        borderBottomRightRadius: 8,
+    },
+    centerText: {
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderRadius: 15,
+    },
+    instructionText: {
+        color: '#fff',
+        fontSize: 16,
+        textAlign: 'center',
+        fontWeight: '500',
+        lineHeight: 22,
+    },
+    processingContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        gap: 15,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        paddingHorizontal: 30,
+        paddingVertical: 20,
+        borderRadius: 20,
+    },
+    processingText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    processingSubtext: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '400',
+        opacity: 0.8,
+    },
+    failureContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        backgroundColor: 'rgba(244, 67, 54, 0.95)',
+        padding: 25,
+        borderRadius: 20,
+        gap: 15,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    failureTitle: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    tryAgainButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        paddingHorizontal: 25,
+        paddingVertical: 12,
+        borderRadius: 20,
+    },
+    tryAgainText: {
+        color: '#F44336',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    bottomControls: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    captureButton: {
+        backgroundColor: 'rgba(76, 175, 80, 0.98)',
+        paddingHorizontal: 35,
+        paddingVertical: 20,
+        borderRadius: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderWidth: 3,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    captureButtonDisabled: {
+        backgroundColor: 'rgba(128, 128, 128, 0.8)',
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    captureIcon: {
+        fontSize: 24,
+    },
+    captureText: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 35,
+        borderRadius: 25,
+        alignItems: 'center',
+        width: '85%',
+        maxWidth: 320,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+        textAlign: 'center',
+        marginBottom: 25,
+        lineHeight: 28,
+    },
+    modalPlant: {
+        marginBottom: 20,
+        backgroundColor: '#F8F8F8',
+        borderRadius: 20,
+        padding: 25,
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#4CAF50',
+        shadowColor: '#4CAF50',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    modalPlantContainer: {
+        position: 'relative',
+    },
+    modalPlantImage: {
+        width: 140,
+        height: 160,
+        borderRadius: 15,
+    },
+    modalPlantEmojiOverlay: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#4CAF50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    modalPlantEmojiText: {
+        fontSize: 20,
+    },
+    coinReward: {
+        backgroundColor: '#FFA500',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 15,
+        marginBottom: 15,
+    },
+    coinRewardText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    confidenceContainer: {
+        backgroundColor: '#E3F2FD',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        marginBottom: 25,
+    },
+    confidenceText: {
+        color: '#1976D2',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    modalButtons: {
+        gap: 15,
+        width: '100%',
+    },
+    modalButton: {
+        backgroundColor: '#4CAF50',
+        paddingVertical: 15,
+        borderRadius: 20,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    modalButtonSecondary: {
+        backgroundColor: '#757575',
+    },
+    modalButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    instructionsContent: {
+        backgroundColor: '#fff',
+        padding: 35,
+        borderRadius: 25,
+        alignItems: 'center',
+        width: '90%',
+        maxWidth: 350,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
+        maxHeight: '80%',
+    },
+    instructionsTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+        marginBottom: 25,
+    },
+    instructionsText: {
+        fontSize: 14,
+        color: '#333',
+        textAlign: 'left',
+        lineHeight: 20,
+        marginBottom: 30,
+    },
+    okButton: {
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 50,
+        paddingVertical: 15,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    okButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+});
