@@ -47,6 +47,10 @@ export default function CollectionScreen({ navigation }) {
             poppy: {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
+            },
+            gele_ganzenbloem: {
+                basic: require('../assets/images/plants/gele_ganzenbloem_basic_pot.png'),
+                round: require('../assets/images/plants/gele_ganzenbloem_round_pot.png'),
             }
         };
 
@@ -88,7 +92,7 @@ export default function CollectionScreen({ navigation }) {
             return null;
         }
 
-        const hasCustomImage = ['cornflower', 'daisy', 'poppy'].includes(item.plantId);
+        const hasCustomImage = ['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(item.plantId);
 
         return (
             <TouchableOpacity
@@ -221,10 +225,7 @@ export default function CollectionScreen({ navigation }) {
                                 🌾 Cornflowers - Blue wildflowers{'\n'}
                                 🌼 Daisies - White with yellow centers{'\n'}
                                 🌺 Poppies - Vibrant red blooms{'\n'}
-                                🤍 Bladder Campion - White with inflated sepals{'\n'}
-                                🌻 Yellow Daisy - Bright yellow flowers{'\n'}
-                                💜 Knapweed - Purple thistle-like flowers{'\n'}
-                                🍀 Red Clover - Red-purple clover flowers
+                                🌻 Yellow Daisy - Bright yellow flowers
                             </Text>
                             <TouchableOpacity
                                 style={styles.collectButton}
@@ -256,7 +257,7 @@ export default function CollectionScreen({ navigation }) {
                                     • Complete challenges to unlock new pots{'\n'}
                                     • Each flower type has different coin values{'\n'}
                                     • Some flowers have special animations in details!{'\n'}
-                                    • Collect all 7 flower types to complete the collection
+                                    • Collect all 4 flower types to complete the collection
                                 </Text>
                             </View>
                         </>

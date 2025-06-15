@@ -159,6 +159,7 @@ export default function ChallengesScreen({ navigation }) {
 
                     <View style={styles.guideContainer}>
                         <Text style={styles.guideTitle}>🌸 Flower Collection Guide</Text>
+                        <Text style={styles.guideSubtitle}>We can identify these 4 flower types:</Text>
                         <View style={styles.flowerGuide}>
                             <View style={styles.flowerItem}>
                                 <Text style={styles.flowerEmoji}>🌾</Text>
@@ -182,31 +183,10 @@ export default function ChallengesScreen({ navigation }) {
                                 </View>
                             </View>
                             <View style={styles.flowerItem}>
-                                <Text style={styles.flowerEmoji}>🤍</Text>
-                                <View style={styles.flowerInfo}>
-                                    <Text style={styles.flowerName}>Bladder Campion</Text>
-                                    <Text style={styles.flowerDesc}>White with inflated sepals - 45 coins</Text>
-                                </View>
-                            </View>
-                            <View style={styles.flowerItem}>
                                 <Text style={styles.flowerEmoji}>🌻</Text>
                                 <View style={styles.flowerInfo}>
                                     <Text style={styles.flowerName}>Yellow Daisy</Text>
                                     <Text style={styles.flowerDesc}>Bright yellow flowers - 55 coins</Text>
-                                </View>
-                            </View>
-                            <View style={styles.flowerItem}>
-                                <Text style={styles.flowerEmoji}>💜</Text>
-                                <View style={styles.flowerInfo}>
-                                    <Text style={styles.flowerName}>Knapweed</Text>
-                                    <Text style={styles.flowerDesc}>Purple thistle-like flowers - 65 coins</Text>
-                                </View>
-                            </View>
-                            <View style={styles.flowerItem}>
-                                <Text style={styles.flowerEmoji}>🍀</Text>
-                                <View style={styles.flowerInfo}>
-                                    <Text style={styles.flowerName}>Red Clover</Text>
-                                    <Text style={styles.flowerDesc}>Red-purple clover flowers - 40 coins</Text>
                                 </View>
                             </View>
                         </View>
@@ -216,15 +196,15 @@ export default function ChallengesScreen({ navigation }) {
                         <Text style={styles.tipTitle}>💡 Pro Tips</Text>
                         <Text style={styles.tipText}>
                             • Find flowers in your garden or local park{'\n'}
-                            • 90% success rate when scanning flowers{'\n'}
+                            • High success rate when scanning the 4 supported flowers{'\n'}
                             • Each flower can only be collected once{'\n'}
                             • Cornflowers and Poppies have special animations!{'\n'}
                             • Poppies are worth the most coins (75){'\n'}
-                            • Knapweed is the second highest value (65 coins){'\n'}
+                            • Yellow Daisies are common and worth good coins (55){'\n'}
                             • Use your coins to buy beautiful new pots{'\n'}
                             • Complete challenges for bonus coin rewards!{'\n'}
                             • Take photos in good lighting for better recognition{'\n'}
-                            • Collect all 7 flower types to complete your collection
+                            • Collect all 4 flower types to complete your collection
                         </Text>
                     </View>
 
@@ -520,7 +500,13 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#E65100',
+        marginBottom: 10,
+    },
+    guideSubtitle: {
+        fontSize: 14,
+        color: '#E65100',
         marginBottom: 15,
+        fontWeight: '500',
     },
     flowerGuide: {
         gap: 12,

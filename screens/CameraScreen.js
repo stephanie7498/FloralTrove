@@ -49,6 +49,10 @@ export default function CameraScreen({ navigation }) {
             poppy: {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
+            },
+            gele_ganzenbloem: {
+                basic: require('../assets/images/plants/gele_ganzenbloem_basic_pot.png'),
+                round: require('../assets/images/plants/gele_ganzenbloem_round_pot.png'),
             }
         };
 
@@ -61,7 +65,6 @@ export default function CameraScreen({ navigation }) {
         }
 
         // For new plants without images, use the basic pot as fallback
-        // The UI will handle showing plant info via text/emoji
         return require('../assets/images/pots/basic_pot.png');
     };
 
@@ -220,7 +223,7 @@ export default function CameraScreen({ navigation }) {
                 let failureMessage = 'Could not identify this plant.';
 
                 if (identificationResult.scientificName) {
-                    failureMessage = `Found "${identificationResult.scientificName}" but this plant is not in our collection yet.\n\nWe currently collect: Cornflowers, Daisies, Poppies, Bladder Campion, Yellow Daisy, Knapweed, and Red Clover.`;
+                    failureMessage = `Found "${identificationResult.scientificName}" but this plant is not in our collection yet.\n\nWe currently collect: Cornflowers, Daisies, Poppies, and Yellow Daisies.`;
                 } else if (identificationResult.confidence > 0) {
                     failureMessage = `Plant detected but confidence too low (${identificationResult.confidence.toFixed(1)}%).\n\nTry selecting a clearer photo with good lighting.`;
                 }
@@ -316,12 +319,12 @@ export default function CameraScreen({ navigation }) {
                         {recognitionFailed && (
                             <View style={styles.failureContainer}>
                                 <Text style={styles.failureTitle}>
-                                    {getCollectedPlantIds().length >= 7 ?
+                                    {getCollectedPlantIds().length >= 4 ?
                                         "All flowers collected!" :
                                         "Cannot recognize flower."
                                     }
                                 </Text>
-                                {getCollectedPlantIds().length >= 7 ? (
+                                {getCollectedPlantIds().length >= 4 ? (
                                     <TouchableOpacity
                                         style={styles.tryAgainButton}
                                         onPress={() => navigation.navigate('Collection')}
@@ -372,7 +375,7 @@ export default function CameraScreen({ navigation }) {
                                         style={styles.modalPlantImage}
                                         resizeMode="contain"
                                     />
-                                    {!['cornflower', 'daisy', 'poppy'].includes(foundPlant.id) && (
+                                    {!['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(foundPlant.id) && (
                                         <View style={styles.modalPlantEmojiOverlay}>
                                             <Text style={styles.modalPlantEmojiText}>{foundPlant.emoji}</Text>
                                         </View>
@@ -432,10 +435,7 @@ export default function CameraScreen({ navigation }) {
                             🌾 Cornflowers - Blue wildflowers{'\n'}
                             🌼 Daisies - White with yellow centers{'\n'}
                             🌺 Poppies - Vibrant red blooms{'\n'}
-                            🤍 Bladder Campion - White with inflated sepals{'\n'}
-                            🌻 Yellow Daisy - Bright yellow flowers{'\n'}
-                            💜 Knapweed - Purple thistle-like flowers{'\n'}
-                            🍀 Red Clover - Red-purple clover flowers{'\n\n'}
+                            🌻 Yellow Daisy - Bright yellow flowers{'\n\n'}
                             💡 Tips for best results:{'\n'}
                             • Use good lighting (natural light works best){'\n'}
                             • Get close to the flower{'\n'}

@@ -88,6 +88,10 @@ export default function PlantDetailScreen({ route, navigation }) {
             poppy: {
                 basic: require('../assets/images/plants/poppy_basic_pot.png'),
                 round: require('../assets/images/plants/poppy_round_pot.png'),
+            },
+            gele_ganzenbloem: {
+                basic: require('../assets/images/plants/gele_ganzenbloem_basic_pot.png'),
+                round: require('../assets/images/plants/gele_ganzenbloem_round_pot.png'),
             }
         };
 
@@ -157,14 +161,6 @@ export default function PlantDetailScreen({ route, navigation }) {
                 "• Can grow in poor soil conditions",
                 "• Attracts bees and other pollinators"
             ],
-            blaussilene: [
-                "• Also known as Bladder Campion",
-                "• Distinctive inflated calyx gives it the 'bladder' name",
-                "• Common in meadows and grasslands",
-                "• White flowers bloom from late spring to autumn",
-                "• Young leaves are edible and taste like peas",
-                "• Important food source for wildlife"
-            ],
             gele_ganzenbloem: [
                 "• Bright yellow petals attract many pollinators",
                 "• Blooms from spring through early fall",
@@ -172,22 +168,6 @@ export default function PlantDetailScreen({ route, navigation }) {
                 "• Drought-tolerant once established",
                 "• Seeds provide food for birds",
                 "• Easy to grow in most soil types"
-            ],
-            knoopkruid: [
-                "• Also known as Greater Knapweed",
-                "• Purple flower heads attract butterflies",
-                "• Deep taproot makes it drought resistant",
-                "• Blooms from summer to early autumn",
-                "• Important nectar source for bees",
-                "• Seeds are eaten by goldfinches and other birds"
-            ],
-            rode_klaver: [
-                "• Red Clover is a nitrogen-fixing legume",
-                "• Improves soil fertility naturally",
-                "• Important forage crop for livestock",
-                "• Flowers are rich in nectar",
-                "• Attracts bees, butterflies, and hummingbirds",
-                "• Can bloom multiple times per growing season"
             ]
         };
         return facts[plantId] || [
@@ -197,6 +177,8 @@ export default function PlantDetailScreen({ route, navigation }) {
             "• Take care of your plants and they'll thrive"
         ];
     };
+
+    const hasCustomImage = ['cornflower', 'daisy', 'poppy', 'gele_ganzenbloem'].includes(item.plantId);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -228,7 +210,7 @@ export default function PlantDetailScreen({ route, navigation }) {
                                         style={styles.plantDetailImage}
                                         resizeMode="contain"
                                     />
-                                    {!['cornflower', 'daisy', 'poppy'].includes(item.plantId) && (
+                                    {!hasCustomImage && (
                                         <View style={styles.plantDetailEmojiOverlay}>
                                             <Text style={styles.plantDetailEmojiText}>{plant.emoji}</Text>
                                         </View>

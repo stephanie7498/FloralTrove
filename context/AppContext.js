@@ -15,33 +15,25 @@ const initialState = {
         {
             id: 2,
             title: "Flower Enthusiast",
-            target: 5,
+            target: 2,
             progress: 0,
-            reward: 100,
+            reward: 75,
             completed: false
         },
         {
             id: 3,
             title: "Garden Explorer",
-            target: 10,
+            target: 3,
             progress: 0,
-            reward: 200,
+            reward: 150,
             completed: false
         },
         {
             id: 4,
-            title: "Botanical Expert",
-            target: 15,
+            title: "Master Collector",
+            target: 4,
             progress: 0,
             reward: 300,
-            completed: false
-        },
-        {
-            id: 5,
-            title: "Master Collector",
-            target: 20,
-            progress: 0,
-            reward: 500,
             completed: false
         }
     ],
@@ -49,6 +41,7 @@ const initialState = {
     activePotType: 'basic'
 };
 
+// Alleen de 4 bloemen waarvoor de afbeeldingen werken
 const plantData = [
     {
         id: 'cornflower',
@@ -75,36 +68,12 @@ const plantData = [
         emoji: '🌺'
     },
     {
-        id: 'blaussilene',
-        name: 'Bladder Campion',
-        description: 'A delicate white flower with inflated sepals, commonly found in meadows and grasslands. Known for its distinctive balloon-like calyx.',
-        rarity: 'common',
-        coins: 45,
-        emoji: '🤍'
-    },
-    {
         id: 'gele_ganzenbloem',
         name: 'Yellow Daisy',
         description: 'A bright yellow flower that brings sunshine to any garden. These cheerful blooms are perfect for attracting pollinators.',
         rarity: 'common',
         coins: 55,
         emoji: '🌻'
-    },
-    {
-        id: 'knoopkruid',
-        name: 'Knapweed',
-        description: 'A purple thistle-like flower with distinctive knobby flower heads. These hardy plants are important for wildlife and pollinators.',
-        rarity: 'uncommon',
-        coins: 65,
-        emoji: '💜'
-    },
-    {
-        id: 'rode_klaver',
-        name: 'Red Clover',
-        description: 'A vibrant red-purple clover flower that\'s both beautiful and beneficial. These nitrogen-fixing plants enrich the soil naturally.',
-        rarity: 'common',
-        coins: 40,
-        emoji: '🍀'
     }
 ];
 
